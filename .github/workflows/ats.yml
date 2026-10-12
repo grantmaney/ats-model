@@ -28,9 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -41,7 +41,7 @@ jobs:
       # Raw data is not committed; cache it so past seasons are downloaded
       # once (CFBD free tier is ~1,000 calls/month).
       - name: Restore raw data cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: data/raw
           key: raw-${{ github.run_id }}
@@ -64,11 +64,23 @@ jobs:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: python -m ats ${{ steps.kind.outputs.kind }}
 
+      # Save downloads even if a later step fails, so the next run doesn't
+      # re-spend CFBD calls refetching history.
+      - name: Save raw data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/raw
+          key: raw-${{ github.run_id }}
+
       - name: Commit rankings and results
         run: |
           git config user.name "ats-bot"
           git config user.email "ats-bot@users.noreply.github.com"
-          git add data/rankings data/results site/data
+          # Only add paths that exist (data/results appears after the first grading).
+          for p in data/rankings data/results site/data; do
+            if [ -e "$p" ]; then git add "$p"; fi
+          done
           if git diff --cached --quiet; then
             echo "nothing to commit"
           else
