@@ -27,13 +27,13 @@ from .config import PICKEM
 from .teams import to_canonical
 
 log = logging.getLogger(__name__)
-NUM = re.compile(r"(?<![\w.])([+-]?\d{1,2}(?:\.5|Ã‚Â½)?|PK|pk|EVEN|even)(?![\w.])")
+NUM = re.compile(r"(?<![\w.])([+-]?\d{1,2}(?:\.5|½)?|PK|pk|EVEN|even)(?![\w.])")
 
 
 def _num(tok: str) -> float:
     if tok.lower() in ("pk", "even"):
         return 0.0
-    return float(tok.replace("Ã‚Â½", ".5"))
+    return float(tok.replace("½", ".5"))
 
 
 def pdf_lines(path: Path) -> list[str]:

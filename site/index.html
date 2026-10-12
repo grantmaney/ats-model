@@ -56,7 +56,7 @@
 <body>
 <main>
   <h1>Weekly ATS cover-probability ranking</h1>
-  <p class="sub" id="sub">Loadingâ€¦</p>
+  <p class="sub" id="sub">Loading…</p>
   <div class="status" id="status"></div>
   <div class="notes" id="notes"></div>
 
@@ -85,23 +85,23 @@
   <footer id="footer"></footer>
 </main>
 <script>
-const fmtLine = x => x == null ? "â€”" : (x === 0 ? "PK" : (x > 0 ? "+" : "") + x.toFixed(1));
-const pct = x => x == null ? "â€”" : (100 * x).toFixed(1) + "%";
+const fmtLine = x => x == null ? "—" : (x === 0 ? "PK" : (x > 0 ? "+" : "") + x.toFixed(1));
+const pct = x => x == null ? "—" : (100 * x).toFixed(1) + "%";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let DATA = null, FILTER = "all";
 try { FILTER = localStorage.getItem("ats-filter") || "all"; } catch (e) {}
 
 function tile(label, rec) {
-  if (!rec || !rec.n) return `<div class="tile"><div class="k">${label}</div><div class="v">â€”</div><div class="ci">no graded picks yet</div></div>`;
+  if (!rec || !rec.n) return `<div class="tile"><div class="k">${label}</div><div class="v">—</div><div class="ci">no graded picks yet</div></div>`;
   return `<div class="tile"><div class="k">${label}</div>
-    <div class="v">${rec.wins}-${rec.n - rec.wins} Â· ${pct(rec.hit_rate)}</div>
-    <div class="ci">95% CI ${pct(rec.ci_lo)}â€“${pct(rec.ci_hi)}</div></div>`;
+    <div class="v">${rec.wins}-${rec.n - rec.wins} · ${pct(rec.hit_rate)}</div>
+    <div class="ci">95% CI ${pct(rec.ci_lo)}–${pct(rec.ci_hi)}</div></div>`;
 }
 
 function render() {
   const d = DATA;
   document.getElementById("sub").textContent =
-    `Week of ${d.week_start} Â· ${d.kind === "weekly" ? "Tuesday headline" : "daily refresh"} Â· generated ${new Date(d.generated_at).toLocaleString()}`;
+    `Week of ${d.week_start} · ${d.kind === "weekly" ? "Tuesday headline" : "daily refresh"} · generated ${new Date(d.generated_at).toLocaleString()}`;
   const notes = [...(d.notes || [])];
   const pk = d.sources?.pickem;
   if (pk?.file) notes.push(`Pickem sheet: ${pk.file} (${pk.matched} games matched).`);
@@ -125,7 +125,7 @@ function render() {
       <td class="num">${fmtLine(g.live_home_spread)}</td>
       <td class="num">${fmtLine(g.model_fair_home_spread)}</td>
       <td class="num">${pct(g.p_cover)}</td>
-      <td class="num">${g.edge == null ? "â€”" : (g.edge >= 0 ? "+" : "") + (100 * g.edge).toFixed(1)}</td>
+      <td class="num">${g.edge == null ? "—" : (g.edge >= 0 ? "+" : "") + (100 * g.edge).toFixed(1)}</td>
       <td class="reason">${esc(g.key_reason)}${g.flags ? `<div class="flags">${esc(g.flags)}</div>` : ""}</td>
       <td class="conf-${esc(g.confidence)}" title="${esc(g.confidence_basis)}">${esc(g.confidence)}</td>
       <td class="muted">${new Date(g.kickoff_utc).toLocaleString([], {weekday: "short", hour: "numeric", minute: "2-digit"})}</td>
