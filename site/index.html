@@ -108,7 +108,7 @@ function render() {
   document.getElementById("notes").innerHTML = notes.map(esc).join("<br>");
   const r = d.season_record || {};
   document.getElementById("tiles").innerHTML =
-    tile("Top 5", r.top5_graded) + tile("Top 6", r.top6_graded) + tile("Top 10", r.top10_graded) +
+    tile("Top 6", r.top6_graded) + tile("Top 10", r.top10_graded) +
     tile("All picks", r.all_graded);
   const st = document.getElementById("status");
   const lockAt = d.submit_lock ? new Date(d.submit_lock) : null;
