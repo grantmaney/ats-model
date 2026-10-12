@@ -26,7 +26,7 @@ import pandas as pd
 from . import pickem
 from .backtest import metrics as M
 from .backtest import walkforward as W
-from .config import DATA, ROOT
+from .config import DATA, ROOT, WEEK_TZ
 from .weeks import current_season, football_week_start, football_week_start_series
 
 log = logging.getLogger(__name__)
@@ -223,28 +223,49 @@ def previous_rankings(week_start) -> list[dict]:
     return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(d.glob("*.json"))] if d.exists() else []
 
 
-def apply_locks(table: pd.DataFrame, prior: list[dict], now: datetime) -> pd.DataFrame:
-    """Games that have kicked off keep their last pre-kickoff entry."""
+def submit_lock(week_start) -> pd.Timestamp:
+    """Pick submission deadline: Friday 10pm Pacific of the football week."""
+    fri = pd.Timestamp(week_start) + pd.Timedelta(days=3, hours=22)
+    return fri.tz_localize(WEEK_TZ).tz_convert("UTC")
+
+
+def lock_time(kickoff_utc: str, week_start) -> pd.Timestamp:
+    """A game locks at the submission deadline, or at kickoff if earlier."""
+    return min(pd.Timestamp(kickoff_utc), submit_lock(week_start))
+
+
+PICK_FIELDS = ("pick_team", "pick_side", "pick_line", "p_cover", "edge", "confidence",
+               "confidence_basis", "key_reason", "model_fair_home_spread", "ratings_fair_home_spread")
+
+
+def apply_locks(table: pd.DataFrame, prior: list[dict], now: datetime, week_start) -> pd.DataFrame:
+    """Locked games (past kickoff or the Friday deadline) keep their last
+    entry published before their lock time. A game that locked before any
+    ranking existed gets no pick at all: it is shown, unranked, and never graded."""
     table = table.copy()
     table["locked"] = False
-    started = pd.to_datetime(table["kickoff_utc"], utc=True) <= pd.Timestamp(now)
+    table["unranked"] = False
+    locks = table["kickoff_utc"].map(lambda k: lock_time(k, week_start))
+    is_locked = locks <= pd.Timestamp(now)
     last = {}
     for rk in prior:
         for g in rk["games"]:
-            if pd.Timestamp(rk["generated_at"]) < pd.Timestamp(g["kickoff_utc"]):
+            if pd.Timestamp(rk["generated_at"]) < lock_time(g["kickoff_utc"], week_start) and g.get("pick_side"):
                 last[g["game_id"]] = g
-    for i in table.index[started]:
+    for i in table.index[is_locked]:
         gid = table.at[i, "game_id"]
+        table.at[i, "locked"] = True
         if gid in last:
             for k, v in last[gid].items():
-                if k in table.columns and k not in ("rank", "locked"):
+                if k in table.columns and k not in ("rank", "locked", "unranked"):
                     table.at[i, k] = v
-            table.at[i, "locked"] = True
         else:
-            table.at[i, "flags"] = (table.at[i, "flags"] + "; " if table.at[i, "flags"] else "") + \
-                "kicked off before first ranking (not graded)"
-            table.at[i, "locked"] = True
-            table.at[i, "ungradeable"] = True
+            for k in PICK_FIELDS:
+                if k in table.columns:
+                    table.at[i, k] = None
+            table.at[i, "unranked"] = True
+            table.at[i, "key_reason"] = "Started before this week's first ranking; no pick made"
+            table.at[i, "flags"] = "not ranked (not graded)"
     return table
 
 
@@ -264,7 +285,8 @@ def write_ranking(payload: dict, table: pd.DataFrame, week_start, kind: str) -> 
 def grade(now: datetime | None = None) -> pd.DataFrame:
     """Grade every finished, logged game not yet in results.csv (append-only).
     Two versions per game: 'headline' (first ranking of the week, i.e. the
-    Tuesday list) and 'final' (last ranking published before kickoff)."""
+    Tuesday list) and 'submitted' (last ranking published before the game's
+    lock: Friday 10pm PT, or kickoff if earlier). 'submitted' is the record."""
     from .model import data
     data.games.cache_clear()
     finals = pd.concat([data.games(lg)[["game_id", "league", "margin", "close_home_spread"]]
@@ -282,14 +304,14 @@ def grade(now: datetime | None = None) -> pd.DataFrame:
         entries: dict[tuple, dict] = {}
         for rk in ranks:
             for g in rk["games"]:
-                if pd.Timestamp(rk["generated_at"]) >= pd.Timestamp(g["kickoff_utc"]) or g.get("locked"):
+                if pd.Timestamp(rk["generated_at"]) >= lock_time(g["kickoff_utc"], wdir.name) or g.get("locked"):
                     continue
-                if not g.get("pick_side"):  # unmodeled game: nothing to grade
+                if not g.get("pick_side"):  # unmodeled/unranked game: nothing to grade
                     continue
                 k = (g["league"], g["game_id"])
                 entries.setdefault(k, {})
                 entries[k].setdefault("headline", {**g, "generated_at": rk["generated_at"]})
-                entries[k]["final"] = {**g, "generated_at": rk["generated_at"]}
+                entries[k]["submitted"] = {**g, "generated_at": rk["generated_at"]}
         for (lg, gid), vers in entries.items():
             if (lg, gid) not in finals.index:
                 continue
@@ -321,13 +343,13 @@ def grade(now: datetime | None = None) -> pd.DataFrame:
 
 
 def season_record(season: int) -> dict:
-    """Season-to-date top-5/top-10 records from the Tuesday headline ranking."""
+    """Season-to-date records of the submitted (Friday-locked) list."""
     if not RESULTS.exists():
         return {}
     r = pd.read_csv(RESULTS, dtype={"game_id": str})
-    r = r[(r["version"] == "headline") & (pd.to_datetime(r["week_start"]).map(lambda d: d.year if d.month >= 8 else d.year - 1) == season)]
-    out = {}
-    for label, n in (("top5", 5), ("top10", 10), ("all", None)):
+    r = r[(r["version"] == "submitted") & (pd.to_datetime(r["week_start"]).map(lambda d: d.year if d.month >= 8 else d.year - 1) == season)]
+    out = {"weeks": int(r["week_start"].nunique())}
+    for label, n in (("top5", 5), ("top6", 6), ("top10", 10), ("all", None)):
         x = r if n is None else r[r["rank"] <= n]
         for col in ("hit_graded", "hit_live", "hit_close"):
             s = M.hit_summary(x[col])
@@ -341,10 +363,14 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
     now = now or datetime.now(timezone.utc)
     season = current_season(now.date())
     week_start = pd.Timestamp(football_week_start(now))
-    if kind == "weekly":
-        graded = grade(now)
-        log.info("graded %d new entries", len(graded))
-    odds_info = refresh_data(season) if fetch else {}
+    lock = submit_lock(week_start)
+    frozen = pd.Timestamp(now) >= lock
+    # Always pull fresh results first, then grade anything newly finished.
+    odds_info = refresh_data(season, snapshot_odds=not frozen) if fetch else {}
+    graded = grade(now)
+    log.info("graded %d new entries", len(graded))
+    if frozen:
+        return publish_locked(week_start, season, now)
 
     tables, notes = [], []
     week_games = []
@@ -369,13 +395,16 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
     table = pd.concat(tables, ignore_index=True) if tables else pd.DataFrame()
     prior = previous_rankings(week_start)
     if not table.empty:
-        table = apply_locks(table, prior, now)
-        table = table.sort_values("edge", ascending=False, na_position="last").reset_index(drop=True)
-        table.insert(0, "rank", np.arange(1, len(table) + 1))
+        table = apply_locks(table, prior, now, week_start)
+        has_pick = table["pick_side"].notna() & ~table["unranked"]
+        ranked = table[has_pick].sort_values("edge", ascending=False).reset_index(drop=True)
+        ranked.insert(0, "rank", np.arange(1, len(ranked) + 1))
+        rest = table[~has_pick].sort_values("kickoff_utc").assign(rank=None)
+        table = pd.concat([ranked, rest], ignore_index=True)
 
     payload = {
-        "generated_at": now.isoformat(), "kind": kind, "week_start": str(week_start.date()),
-        "season": season,
+        "generated_at": now.isoformat(), "kind": kind, "status": "open",
+        "week_start": str(week_start.date()), "submit_lock": lock.isoformat(), "season": season,
         "sources": {"odds": odds_info, "pickem": pick_info,
                     "stats": "nflverse (nflreadpy), CollegeFootballData.com"},
         "notes": notes,
@@ -383,9 +412,57 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
         "games": json.loads(table.to_json(orient="records")) if not table.empty else [],
     }
     path = write_ranking(payload, table, week_start, kind)
+    _publish_site(attach_results(dict(payload)))
+    payload["path"] = str(path)
+    return payload
+
+
+def attach_results(payload: dict) -> dict:
+    """Add each game's graded outcome (submitted version) for the page."""
+    if not RESULTS.exists():
+        return payload
+    r = pd.read_csv(RESULTS, dtype={"game_id": str})
+    r = r[(r["version"] == "submitted") & (r["week_start"] == payload["week_start"])]
+    res = {(row.league, row.game_id): row for row in r.itertuples()}
+    games = []
+    for g in payload["games"]:
+        g = dict(g)
+        row = res.get((g["league"], g["game_id"]))
+        if row is not None:
+            h = row.hit_graded
+            g["result"] = "push" if pd.isna(h) else ("hit" if h == 1 else "miss")
+            g["final_margin_home"] = row.margin
+        games.append(g)
+    payload["games"] = games
+    return payload
+
+
+def publish_locked(week_start, season: int, now: datetime) -> dict:
+    """After the Friday deadline: re-publish the submitted list (no re-ranking)
+    with results filled in as games finish."""
+    subs = [rk for rk in previous_rankings(week_start)
+            if pd.Timestamp(rk["generated_at"]) < submit_lock(week_start)]
+    if not subs:
+        payload = {"generated_at": now.isoformat(), "kind": "locked", "status": "locked",
+                   "week_start": str(pd.Timestamp(week_start).date()),
+                   "submit_lock": submit_lock(week_start).isoformat(), "season": season,
+                   "notes": ["No ranking was published before this week's Friday 10pm PT deadline."],
+                   "season_record": season_record(season), "games": [], "sources": {}}
+    else:
+        payload = dict(subs[-1])
+        payload["status"] = "locked"
+        payload["notes"] = list(payload.get("notes", [])) + [
+            f"Picks locked at the Friday 10pm PT deadline; results updated {now.strftime('%Y-%m-%d %H:%M UTC')}."]
+        payload["season_record"] = season_record(season)
+        payload["results_updated_at"] = now.isoformat()
+    payload = attach_results(payload)
+    _publish_site(payload)
+    payload["path"] = "(locked; no new ranking written)"
+    return payload
+
+
+def _publish_site(payload: dict) -> None:
     SITE_DATA.mkdir(parents=True, exist_ok=True)
     (SITE_DATA / "latest.json").write_text(json.dumps(payload, indent=1, default=str), encoding="utf-8")
     if RESULTS.exists():
         pd.read_csv(RESULTS).to_json(SITE_DATA / "results.json", orient="records", indent=1)
-    payload["path"] = str(path)
-    return payload

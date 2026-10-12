@@ -152,6 +152,7 @@ def cmd_weekly(args) -> None:
     if not g.empty:
         cols = ["rank", "league", "pick_team", "pick_line", "pickem_home_spread", "live_home_spread",
                 "model_fair_home_spread", "p_cover", "edge", "confidence", "key_reason", "flags"]
+        cols = [c for c in cols + ["result"] if c in g]
         print(g[cols].head(25).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
 
