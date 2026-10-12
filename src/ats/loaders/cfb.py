@@ -129,6 +129,23 @@ def load_returning_production(season: int, force: bool = False) -> pd.DataFrame:
                   meta={"endpoint": "/player/returning", "season": season})
 
 
+def load_final_poll(season: int, force: bool = False) -> pd.DataFrame:
+    """Final AP Top 25 of a completed season (last postseason poll)."""
+    def fetch() -> pd.DataFrame:
+        rows = []
+        weeks = _get("/rankings", year=season, seasonType="postseason") or _get("/rankings", year=season)
+        if not weeks:
+            return pd.DataFrame(columns=["season", "team", "rank"])
+        last = max(weeks, key=lambda w: (w.get("seasonType") == "postseason", w.get("week", 0)))
+        for poll in last.get("polls", []):
+            if poll.get("poll") == "AP Top 25":
+                for r in poll.get("ranks", []):
+                    rows.append({"season": season, "team": r.get("school"), "rank": r.get("rank")})
+        return pd.DataFrame(rows)
+    return cached(SOURCE, f"final_poll_{season}", fetch, immutable=_immutable(season),
+                  ttl_hours=24 * 7, force=force, meta={"endpoint": "/rankings", "season": season})
+
+
 def load_teams(force: bool = False) -> pd.DataFrame:
     return cached(SOURCE, "teams", lambda: pd.json_normalize(_get("/teams"), sep="_"),
                   immutable=False, ttl_hours=24 * 30, force=force, meta={"endpoint": "/teams"})

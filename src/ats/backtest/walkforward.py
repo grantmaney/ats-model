@@ -47,9 +47,16 @@ def _check(train: pd.DataFrame, as_of: pd.Timestamp, what: str) -> None:
         raise R.LeakageError(f"{what}: training row at {train['kickoff_utc'].max()} >= cutoff {as_of}")
 
 
-def build_frame(league: str, games: pd.DataFrame, obs: pd.DataFrame) -> pd.DataFrame:
-    feats = R.pregame_ratings(league, obs, games)
+def build_frame(league: str, games: pd.DataFrame, obs: pd.DataFrame, params: R.Params | None = None,
+                extra: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Pregame ratings features per game. `extra` = optional candidate
+    feature columns keyed by game_id (missing -> 0)."""
+    feats = R.pregame_ratings(league, obs, games, params)
     df = games.merge(feats, on="game_id", how="inner")
+    if extra is not None:
+        df = df.merge(extra, on="game_id", how="left")
+        cols = [c for c in extra.columns if c != "game_id"]
+        df[cols] = df[cols].fillna(0.0)
     df["home_field"] = (~df["neutral_site"].astype(bool)).astype(float)
     if league == "CFB":
         df = df[(df["home_classification"] == "fbs") & (df["away_classification"] == "fbs")]
@@ -59,9 +66,11 @@ def build_frame(league: str, games: pd.DataFrame, obs: pd.DataFrame) -> pd.DataF
 
 
 def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "close_home_spread",
-        eval_from: int | None = None, frame: pd.DataFrame | None = None) -> pd.DataFrame:
+        eval_from: int | None = None, frame: pd.DataFrame | None = None,
+        features: list[str] | None = None) -> pd.DataFrame:
     """Return one row per game (from the first predictable week) with all
     model outputs. Rows with season >= eval_from are the reported sample."""
+    feats = list(features or FEATURES)
     cfg = LEAGUE_DEFAULTS[league]
     eval_from = eval_from or cfg["eval_from"]
     df = frame if frame is not None else build_frame(league, games, obs)
@@ -80,8 +89,8 @@ def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "cl
         _check(tr2, as_of, "model2")
         if len(tr2) < MIN_TRAIN_M2:
             continue
-        m2 = make_pipeline(StandardScaler(), Ridge(alpha=1.0)).fit(tr2[FEATURES], tr2["margin_f"])
-        df.loc[now, "pred2"] = m2.predict(df.loc[now, FEATURES])
+        m2 = make_pipeline(StandardScaler(), Ridge(alpha=1.0)).fit(tr2[feats], tr2["margin_f"])
+        df.loc[now, "pred2"] = m2.predict(df.loc[now, feats])
         # sigma for model 2 alone, from its past OOS residuals (else market residuals)
         r2 = (tr2["margin_f"] - tr2["pred2"]).dropna()
         s2 = r2.std() if len(r2) >= MIN_TRAIN_M3 else (tr2["margin_f"] + tr2["line"]).std()

@@ -197,6 +197,9 @@ def main(argv: list[str] | None = None) -> None:
     gr = sub.add_parser("grade", help="grade logged rankings for finished games")
     gr.set_defaults(func=cmd_grade)
 
+    ex = sub.add_parser("experiments", help="dev/holdout feature tests -> reports/experiments.md")
+    ex.set_defaults(func=lambda a: __import__("ats.backtest.experiments", fromlist=["main"]).main())
+
     b = sub.add_parser("backtest", help="walk-forward backtest -> reports/backtest.md")
     b.add_argument("--no-placebo", action="store_true", help="skip the shuffled-score placebo runs")
     b.set_defaults(func=cmd_backtest)

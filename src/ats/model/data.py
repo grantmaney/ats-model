@@ -52,14 +52,16 @@ def _home_flag(off_is_home: pd.Series, neutral: pd.Series) -> pd.Series:
     return np.where(neutral, 0.0, np.where(off_is_home, 1.0, -1.0))
 
 
-@lru_cache(maxsize=2)
-def obs(league: str) -> pd.DataFrame:
+@lru_cache(maxsize=8)
+def obs(league: str, nfl_wp_window: tuple[float, float] | None = None) -> pd.DataFrame:
     """Per (game, offense) efficiency: epa (EPA or PPA per play), sr (success
-    rate), pts (points scored). h = +1 offense at home, -1 away, 0 neutral."""
+    rate), pts (points scored). h = +1 offense at home, -1 away, 0 neutral.
+    nfl_wp_window=(lo, hi) keeps only NFL plays with win probability in that
+    range (drops garbage time)."""
     g = games(league)
     g = g[g["margin"].notna()]
     if league == "NFL":
-        eff = _nfl_efficiency(tuple(sorted(g["season"].unique())))
+        eff = _nfl_efficiency(tuple(sorted(g["season"].unique())), nfl_wp_window)
     else:
         eff = _cfb_efficiency(tuple(sorted(g["season"].unique())))
     cols = ["game_id", "season", "week", "kickoff_utc", "football_week_start", "home", "away",
@@ -79,12 +81,15 @@ def obs(league: str) -> pd.DataFrame:
               "off", "def", "h", "epa", "sr", "pts", "plays"]].reset_index(drop=True)
 
 
-def _nfl_efficiency(seasons: tuple[int, ...]) -> pd.DataFrame:
+def _nfl_efficiency(seasons: tuple[int, ...], wp_window: tuple[float, float] | None = None) -> pd.DataFrame:
     frames = []
     for s in seasons:
         p = pd.read_parquet(RAW / "nflverse" / f"pbp_{s}.parquet",
-                            columns=["game_id", "posteam", "home_team", "epa", "success", "play_type"])
+                            columns=["game_id", "posteam", "home_team", "epa", "success", "play_type", "wp"])
         p = p[p["play_type"].isin(["pass", "run"]) & p["epa"].notna()]
+        if wp_window is not None:
+            # in-game win probability (nflverse `wp`, not the Vegas-informed one)
+            p = p[p["wp"].between(*wp_window)]
         # pbp uses current franchise codes (LA/LAC/LV) even for STL/SD/OAK
         # seasons; keep only home/away and take team codes from the schedule.
         p = p.assign(off_is_home=p["posteam"] == p["home_team"])

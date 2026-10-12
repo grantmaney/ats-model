@@ -46,7 +46,8 @@ class Params:
 
 PARAMS = {
     "NFL": Params(lam=4.0, half_life_weeks=10.0, default_carry=0.6),
-    "CFB": Params(lam=3.0, half_life_weeks=10.0, default_carry=0.7),
+    # half-life 20 adopted 2026-10-12 via reports/experiments.md (dev and holdout both improved)
+    "CFB": Params(lam=3.0, half_life_weeks=20.0, default_carry=0.7),
 }
 
 

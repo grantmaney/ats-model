@@ -1,6 +1,6 @@
 # Walk-forward backtest
 
-Generated 2026-10-12 05:15 UTC. Regenerate with `python -m ats backtest`.
+Generated 2026-10-12 06:10 UTC. Regenerate with `python -m ats backtest`.
 
 Every prediction uses only games that kicked off before that week's Tuesday 00:00 PT cutoff. Ratings, model fits, sigma, the NFL empirical margin distribution and calibration are all refit each week on past data only. Hyperparameters (prior strength, decay, ridge alpha) were fixed before running and not tuned on these results.
 
@@ -58,39 +58,39 @@ Evaluated seasons 2016-2026 (2026 partial); 7889 games with a line and a final s
 
 | Market line | Ratings only (m2) | Blend (m3) |
 |---|---|---|
-| 12.30 | 12.74 | 12.32 |
+| 12.30 | 12.70 | 12.32 |
 
-Blend weights (first -> last week): market 0.86 -> 0.93, ratings model 0.26 -> 0.08. sigma (blend residual SD) averaged 16.0 pts.
+Blend weights (first -> last week): market 0.84 -> 0.92, ratings model 0.26 -> 0.09. sigma (blend residual SD) averaged 16.0 pts.
 
-**Brier score** (coin flip = 0.2500): calibrated blend 0.2501; ratings-only 0.2591.
+**Brier score** (coin flip = 0.2500): calibrated blend 0.2501; ratings-only 0.2584.
 
 **ATS hit rate of top-N picks per week** (pushes excluded)
 
 | Picks | Record |
 |---|---|
-| Top 5 | 464-482 (49.0%, 95% CI 45.9-52.2, p=0.58) |
-| Top 10 | 888-911 (49.4%, 95% CI 47.1-51.7, p=0.60) |
-| All games | 3855-3880 (49.8%, 95% CI 48.7-51.0, p=0.78) |
+| Top 5 | 476-471 (50.3%, 95% CI 47.1-53.4, p=0.90) |
+| Top 10 | 891-906 (49.6%, 95% CI 47.3-51.9, p=0.74) |
+| All games | 3851-3884 (49.8%, 95% CI 48.7-50.9, p=0.72) |
 
 **Hit rate by calibrated edge** (all games)
 
 | Edge | n | Hit rate | 95% CI |
 |---|---|---|---|
-| (-0.001, 0.01] | 4724 | 49.5% | 48.1-51.0 |
-| (0.01, 0.02] | 2395 | 50.4% | 48.4-52.4 |
-| (0.02, 0.03] | 488 | 48.6% | 44.2-53.0 |
-| (0.03, 0.05] | 112 | 55.4% | 46.1-64.2 |
-| (0.05, 1.0] | 16 | 50.0% | 28.0-72.0 |
+| (-0.001, 0.01] | 4811 | 49.5% | 48.1-50.9 |
+| (0.01, 0.02] | 2191 | 50.0% | 47.9-52.1 |
+| (0.02, 0.03] | 548 | 51.5% | 47.3-55.6 |
+| (0.03, 0.05] | 167 | 50.3% | 42.8-57.8 |
+| (0.05, 1.0] | 18 | 50.0% | 29.0-71.0 |
 
 **Calibration of P(home covers)**
 
 | Bin | n | Mean predicted | Observed |
 |---|---|---|---|
-| (0.4, 0.45] | 16.0 | 0.432 | 0.500 |
-| (0.45, 0.48] | 593.0 | 0.474 | 0.503 |
-| (0.48, 0.5] | 6935.0 | 0.491 | 0.500 |
-| (0.5, 0.52] | 184.0 | 0.503 | 0.446 |
-| (0.52, 0.55] | 7.0 | 0.526 | 0.571 |
+| (0.4, 0.45] | 18.0 | 0.434 | 0.500 |
+| (0.45, 0.48] | 707.0 | 0.473 | 0.487 |
+| (0.48, 0.5] | 6657.0 | 0.492 | 0.502 |
+| (0.5, 0.52] | 345.0 | 0.503 | 0.470 |
+| (0.52, 0.55] | 8.0 | 0.529 | 0.375 |
 
 ## CFB (FBS v FBS) vs opening line
 
@@ -100,59 +100,59 @@ Evaluated seasons 2023-2026 (2026 partial); 2324 games with a line and a final s
 
 | Market line | Ratings only (m2) | Blend (m3) |
 |---|---|---|
-| 12.25 | 12.36 | 12.20 |
+| 12.25 | 12.34 | 12.19 |
 
-Blend weights (first -> last week): market 0.95 -> 0.71, ratings model 0.06 -> 0.32. sigma (blend residual SD) averaged 15.6 pts.
+Blend weights (first -> last week): market 0.97 -> 0.69, ratings model 0.05 -> 0.34. sigma (blend residual SD) averaged 15.6 pts.
 
-**Brier score** (coin flip = 0.2500): calibrated blend 0.2494; ratings-only 0.2526.
+**Brier score** (coin flip = 0.2500): calibrated blend 0.2492; ratings-only 0.2520.
 
 **ATS hit rate of top-N picks per week** (pushes excluded)
 
 | Picks | Record |
 |---|---|
-| Top 5 | 155-109 (58.7%, 95% CI 52.7-64.5, p=0.01) |
-| Top 10 | 288-206 (58.3%, 95% CI 53.9-62.6, p=0.00) |
-| All games | 1220-1073 (53.2%, 95% CI 51.2-55.2, p=0.00) |
+| Top 5 | 156-108 (59.1%, 95% CI 53.1-64.9, p=0.00) |
+| Top 10 | 285-209 (57.7%, 95% CI 53.3-62.0, p=0.00) |
+| All games | 1218-1075 (53.1%, 95% CI 51.1-55.2, p=0.00) |
 
 **Closing-line value of picks made at the open** (points the line moved toward our side)
 
 | Picks | n | Mean move | % toward us | % away |
 |---|---|---|---|---|
-| Top 5 | 300 | +2.70 | 59% | 13% |
-| Top 10 | 547 | +2.01 | 55% | 16% |
-| All | 2423 | +0.82 | 47% | 27% |
+| Top 5 | 300 | +2.76 | 59% | 14% |
+| Top 10 | 547 | +2.06 | 55% | 16% |
+| All | 2423 | +0.81 | 47% | 27% |
 
-Robustness: excluding games whose line moved >7 pts open->close (likely stale or erroneous openers), top 5 = 147-116 (55.9%, 95% CI 49.9-61.8, p=0.06).
+Robustness: excluding games whose line moved >7 pts open->close (likely stale or erroneous openers), top 5 = 149-114 (56.7%, 95% CI 50.6-62.5, p=0.04).
 
 **Hit rate by calibrated edge** (all games)
 
 | Edge | n | Hit rate | 95% CI |
 |---|---|---|---|
-| (-0.001, 0.01] | 559 | 54.2% | 50.1-58.3 |
-| (0.01, 0.02] | 458 | 52.0% | 47.4-56.5 |
-| (0.02, 0.03] | 353 | 50.4% | 45.2-55.6 |
-| (0.03, 0.05] | 474 | 53.0% | 48.5-57.4 |
-| (0.05, 1.0] | 449 | 55.7% | 51.1-60.2 |
+| (-0.001, 0.01] | 533 | 52.9% | 48.7-57.1 |
+| (0.01, 0.02] | 425 | 52.2% | 47.5-56.9 |
+| (0.02, 0.03] | 358 | 50.0% | 44.8-55.2 |
+| (0.03, 0.05] | 442 | 53.8% | 49.2-58.4 |
+| (0.05, 1.0] | 535 | 55.5% | 51.3-59.7 |
 
 **Calibration of P(home covers)**
 
 | Bin | n | Mean predicted | Observed |
 |---|---|---|---|
-| (-0.001, 0.4] | 40.0 | 0.359 | 0.350 |
-| (0.4, 0.45] | 175.0 | 0.432 | 0.469 |
-| (0.45, 0.48] | 448.0 | 0.467 | 0.467 |
-| (0.48, 0.5] | 588.0 | 0.490 | 0.481 |
+| (-0.001, 0.4] | 51.0 | 0.357 | 0.353 |
+| (0.4, 0.45] | 202.0 | 0.431 | 0.470 |
+| (0.45, 0.48] | 439.0 | 0.467 | 0.456 |
+| (0.48, 0.5] | 529.0 | 0.490 | 0.493 |
 | (0.5, 0.52] | 429.0 | 0.509 | 0.550 |
-| (0.52, 0.55] | 379.0 | 0.533 | 0.501 |
-| (0.55, 0.6] | 175.0 | 0.568 | 0.566 |
-| (0.6, 1.0] | 59.0 | 0.646 | 0.542 |
+| (0.52, 0.55] | 361.0 | 0.532 | 0.493 |
+| (0.55, 0.6] | 207.0 | 0.568 | 0.546 |
+| (0.6, 1.0] | 75.0 | 0.646 | 0.587 |
 
 ## Combined NFL + CFB ranking vs closing line (2016+)
 
 | Picks | Record |
 |---|---|
-| Top 5 | 536-559 (48.9%, 95% CI 46.0-51.9, p=0.51); 15% CFB |
-| Top 10 | 1025-1024 (50.0%, 95% CI 47.9-52.2, p=1.00); 23% CFB |
+| Top 5 | 534-561 (48.8%, 95% CI 45.8-51.7, p=0.43); 17% CFB |
+| Top 10 | 1025-1024 (50.0%, 95% CI 47.9-52.2, p=1.00); 25% CFB |
 
 ## Placebo check (market right by construction)
 
@@ -161,6 +161,6 @@ Same pipeline on synthetic outcomes: margin = -line + a residual shuffled across
 | Run | Top 5 | Top 10 |
 |---|---|---|
 | NFL close (placebo) | 532-556 (48.9%, 95% CI 45.9-51.9, p=0.49) | 1032-1022 (50.2%, 95% CI 48.1-52.4, p=0.84) |
-| CFB open (placebo) | 130-133 (49.4%, 95% CI 43.4-55.4, p=0.90) | 242-253 (48.9%, 95% CI 44.5-53.3, p=0.65) |
+| CFB open (placebo) | 132-131 (50.2%, 95% CI 44.2-56.2, p=1.00) | 255-237 (51.8%, 95% CI 47.4-56.2, p=0.44) |
 
 ![Calibration](calibration.png)

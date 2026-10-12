@@ -94,7 +94,7 @@ def games(season: int, force: bool = False) -> pd.DataFrame:
     })
     # Extras for features: rest days are known pregame; roof/temp/wind are
     # game-day conditions (fine as pregame proxies, never post-game stats).
-    for c in ("home_rest", "away_rest", "div_game", "roof", "temp", "wind"):
+    for c in ("home_rest", "away_rest", "div_game", "roof", "temp", "wind", "home_qb_id", "away_qb_id"):
         if c in s:
             out[c] = s[c]
     out["margin"] = out["home_score"] - out["away_score"]
