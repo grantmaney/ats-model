@@ -1,0 +1,91 @@
+name: ATS ranking
+
+on:
+  schedule:
+    # GitHub cron is UTC. 13:30 UTC = 6:30am PDT / 5:30am PST (Tuesday main run)
+    - cron: "30 13 * * 2"
+    # 14:00 UTC = 7:00am PDT / 6:00am PST (Wed-Sat refresh)
+    - cron: "0 14 * * 3-6"
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "What to run"
+        type: choice
+        options: [refresh, weekly, grade]
+        default: refresh
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ats-ranking
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -e .
+
+      # Raw data is not committed; cache it so past seasons are downloaded
+      # once (CFBD free tier is ~1,000 calls/month).
+      - name: Restore raw data cache
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-${{ github.run_id }}
+          restore-keys: raw-
+
+      - name: Decide run kind
+        id: kind
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "kind=${{ inputs.kind }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "30 13 * * 2" ]; then
+            echo "kind=weekly" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=refresh" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python -m ats ${{ steps.kind.outputs.kind }}
+
+      - name: Commit rankings and results
+        run: |
+          git config user.name "ats-bot"
+          git config user.email "ats-bot@users.noreply.github.com"
+          git add data/rankings data/results site/data
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "ATS ${{ steps.kind.outputs.kind }} $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: run
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

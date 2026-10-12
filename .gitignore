@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# environments / caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# data (raw pulls and derived tables are reproducible from loaders)
+data/raw/
+data/interim/
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# derived backtest predictions (regenerate with: python -m ats backtest)
+data/backtest/
+# data/rankings/ and data/results/ ARE committed: they are the append-only record.

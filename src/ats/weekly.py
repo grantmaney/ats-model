@@ -1,0 +1,391 @@
+"""Weekly ranking (Tuesday main run) and daily refresh.
+
+    python -m ats weekly     # Tuesday: grade last week, refresh data, rank, publish
+    python -m ats refresh    # Wed-Sat: refresh lines, re-rank, lock kicked-off games
+
+Outputs (append-only; an existing file is never rewritten):
+    data/rankings/<week_start>/<UTC stamp>_<kind>.json / .csv
+    site/data/latest.json  (what the web page renders; overwritten each run)
+
+Lines: the pick is graded against the pickem line when the pool sheet has the
+game, else the live DraftKings line. The model's market input is always the
+live line (latest snapshot as of this run), so a stale pickem line shows up
+as edge, as CLAUDE.md intends.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import warnings
+from datetime import datetime, timezone
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from . import pickem
+from .backtest import metrics as M
+from .backtest import walkforward as W
+from .config import DATA, ROOT
+from .weeks import current_season, football_week_start, football_week_start_series
+
+log = logging.getLogger(__name__)
+RANKINGS = DATA / "rankings"
+RESULTS = DATA / "results" / "results.csv"
+SITE_DATA = ROOT / "site" / "data"
+FIRST_SEASON = {"NFL": 2012, "CFB": 2014}
+
+
+# ---------------------------------------------------------------- data refresh
+def refresh_data(season: int, snapshot_odds: bool = True) -> dict:
+    """Refresh current-season data (past seasons are cached immutably) and
+    rebuild the interim games tables. Returns odds snapshot info."""
+    from .__main__ import cmd_fetch
+    from argparse import Namespace
+    for lg in ("nfl", "cfb"):
+        cmd_fetch(Namespace(league=lg, seasons=f"{FIRST_SEASON[lg.upper()]}-{season}",
+                            no_pbp=False, force=False))
+    info = {}
+    if snapshot_odds:
+        from .loaders import odds
+        for lg in ("NFL", "CFB"):
+            try:
+                df = odds.snapshot(lg)
+                info[lg] = {"events": len(df), "fetched_at": str(df["fetched_at"].max()) if len(df) else None}
+            except Exception as e:  # keep ranking with older snapshots
+                log.error("odds snapshot %s failed: %s", lg, e)
+                info[lg] = {"error": str(e)}
+    return info
+
+
+def live_lines(league: str, games: pd.DataFrame, as_of: datetime) -> pd.DataFrame:
+    """Latest DraftKings home spread per game as of `as_of`, matched to games
+    (home/away swapped matches have their sign flipped)."""
+    from .loaders import odds
+    s = odds.latest_lines(league, as_of=as_of)
+    if s.empty:
+        return pd.DataFrame(columns=["game_id", "live_home_spread", "live_fetched_at", "live_book_update"])
+    s = s.assign(football_week_start=pd.to_datetime(football_week_start_series(s["commence_time"])))
+    key = ["home", "away", "football_week_start"]
+    g = games[key + ["game_id"]]
+    a = s.merge(g, on=key, how="inner").assign(sign=1.0)
+    b = s.merge(g.rename(columns={"home": "away", "away": "home"}), on=key, how="inner").assign(sign=-1.0)
+    m = pd.concat([a, b]).drop_duplicates("game_id")
+    return pd.DataFrame({"game_id": m["game_id"], "live_home_spread": m["home_spread"] * m["sign"],
+                         "live_fetched_at": m["fetched_at"], "live_book_update": m["book_last_update"]})
+
+
+# ---------------------------------------------------------------- prediction
+def predict_league(league: str, week_start: pd.Timestamp, now: datetime) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Run the walk-forward pipeline through the current week, with the live
+    line substituted as the market input for this week's games. Returns
+    (this week's rows, all earlier rows)."""
+    from .model import data
+    data.games.cache_clear(); data.obs.cache_clear()
+    g, o = data.games(league), data.obs(league)
+    live = live_lines(league, g[g["football_week_start"] == week_start], now)
+    frame = W.build_frame(league, g, o)
+    frame = frame.merge(live, on="game_id", how="left")
+    cur = frame["football_week_start"] == week_start
+    # Market input for this week = live DK line; fall back to the source's
+    # pregame line (flagged) when DK has none.
+    frame["market_line_source"] = np.where(cur & frame["live_home_spread"].notna(), "draftkings_live",
+                                           np.where(cur, frame["line_source"], "historical_close"))
+    frame.loc[cur & frame["live_home_spread"].notna(), "close_home_spread"] = frame.loc[
+        cur & frame["live_home_spread"].notna(), "live_home_spread"]
+    frame = frame[frame["football_week_start"] <= week_start]
+    out = W.run(league, g, o, frame=frame)
+    return out[out["football_week_start"] == week_start].copy(), out[out["football_week_start"] < week_start]
+
+
+def _confidence_table(league: str) -> pd.DataFrame | None:
+    p = ROOT / "reports" / f"edge_table_{league.lower()}.csv"
+    return pd.read_csv(p) if p.exists() else None
+
+
+def confidence(edge: float, table: pd.DataFrame | None) -> tuple[str, str]:
+    """Low/Medium/High from the backtested hit rate at this edge level."""
+    if table is None or np.isnan(edge):
+        return "Low", "no backtest"
+    for _, r in table.iterrows():
+        lo, hi = (float(x) for x in r["edge"].strip("([]").split(", "))
+        if lo < edge <= hi or (edge <= hi and lo < 0):
+            label = "High" if r["ci_lo"] > M.BREAKEVEN else "Medium" if r["ci_lo"] > 0.5 else "Low"
+            return label, f"backtest {100 * r['hit_rate']:.1f}% (n={r['n']}) at this edge"
+    return "Low", "edge outside backtested range"
+
+
+def _fmt_line(x: float) -> str:
+    if x is None or (isinstance(x, float) and np.isnan(x)):
+        return ""
+    return "PK" if x == 0 else f"{x:+.1f}"
+
+
+def key_reason(r: pd.Series) -> str:
+    pick_home = r["pick_home"]
+    sgn = 1 if pick_home else -1
+    team = r["home"] if pick_home else r["away"]
+    if pd.notna(r.get("pickem_home_spread")) and pd.notna(r.get("live_home_spread")):
+        move = (r["pickem_home_spread"] - r["live_home_spread"]) * sgn  # >0: market moved toward pick
+        if abs(move) >= 1:
+            return (f"Line moved {abs(move):.1f} pts {'toward' if move > 0 else 'away from'} {team} since the "
+                    f"pickem line ({_fmt_line(sgn * r['pickem_home_spread'])} -> {_fmt_line(sgn * r['live_home_spread'])})")
+    fair2 = -r["pred2"] * sgn
+    mkt = r["line"] * sgn
+    if abs(fair2 - mkt) >= 2:
+        return f"Ratings alone imply {team} {_fmt_line(fair2)} vs market {_fmt_line(mkt)}"
+    if abs(r.get("rest_diff", 0) or 0) >= 4:
+        rd = r["rest_diff"] * sgn
+        return f"Rest: {team} has {rd:+.0f} days vs opponent"
+    return "Small blended edge; no single dominant factor"
+
+
+def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: pd.DataFrame,
+                now: datetime) -> pd.DataFrame:
+    cur = cur.merge(pick_lines, on="game_id", how="left")
+    cur["grade_line_kind"] = np.where(cur["pickem_home_spread"].notna(), "pickem", "live")
+    cur["grade_line"] = cur["pickem_home_spread"].where(cur["pickem_home_spread"].notna(), cur["line"])
+    has = cur["pred3"].notna() & cur["grade_line"].notna()
+    cur["p_home"] = np.nan
+    if has.any():
+        as_of = W.cutoff(cur["football_week_start"].iloc[0])
+        probs = W.cover_probs(league, past, cur.loc[has, "pred3"].to_numpy(float),
+                              cur.loc[has, "grade_line"].to_numpy(float), float(cur.loc[has, "sigma"].iloc[0]), as_of)
+        cur.loc[has, "p_home"] = probs["p_cal"]
+        cur.loc[has, "calibrated"] = probs["calibrated"]
+    cur["pick_home"] = cur["p_home"].fillna(0.5) >= 0.5
+    cur["p_pick"] = np.where(cur["pick_home"], cur["p_home"], 1 - cur["p_home"])
+    cur["edge"] = cur["p_pick"] - 0.5
+    ctab = _confidence_table(league)
+    rows = []
+    for _, r in cur.iterrows():
+        sgn = 1 if r["pick_home"] else -1
+        team = r["home"] if r["pick_home"] else r["away"]
+        flags = []
+        if pd.isna(r.get("live_home_spread")):
+            flags.append("no live DK line")
+        if pd.isna(r.get("pickem_home_spread")):
+            flags.append("no pickem match")
+        if pd.isna(r["pred3"]):
+            flags.append("no model prediction")
+        if r.get("calibrated", 1) == 0:
+            flags.append("uncalibrated")
+        conf, conf_why = confidence(r["edge"], ctab)
+        rows.append({
+            "league": league, "game_id": r["game_id"], "kickoff_utc": r["kickoff_utc"].isoformat(),
+            "away": r["away"], "home": r["home"], "neutral_site": bool(r["neutral_site"]),
+            "pick_team": team, "pick_side": "home" if r["pick_home"] else "away",
+            "pick_line": sgn * r["grade_line"] if pd.notna(r["grade_line"]) else None,
+            "grade_line_kind": r["grade_line_kind"],
+            "pickem_home_spread": r.get("pickem_home_spread"),
+            "live_home_spread": r.get("live_home_spread"),
+            "live_fetched_at": str(r.get("live_fetched_at")) if pd.notna(r.get("live_fetched_at")) else None,
+            "market_line_source": r.get("market_line_source"),
+            "model_fair_home_spread": -r["pred3"] if pd.notna(r["pred3"]) else None,
+            "ratings_fair_home_spread": -r["pred2"] if pd.notna(r["pred2"]) else None,
+            "sigma": r.get("sigma"),
+            "p_cover": r["p_pick"], "edge": r["edge"],
+            "key_reason": key_reason(r) if pd.notna(r["pred3"]) else "No model prediction",
+            "confidence": conf, "confidence_basis": conf_why,
+            "flags": "; ".join(flags),
+        })
+    return pd.DataFrame(rows)
+
+
+def _unmodeled(league: str, week_start, now, modeled: set, pick_lines: pd.DataFrame) -> pd.DataFrame:
+    """Games with a live line or pickem line that the model can't rate
+    (e.g. FBS vs FCS). They stay in the table, flagged, with no probability."""
+    from .model import data
+    g = data.games(league)
+    g = g[(g["football_week_start"] == week_start) & ~g["game_id"].isin(modeled)]
+    g = g.merge(live_lines(league, g, now), on="game_id", how="left").merge(pick_lines, on="game_id", how="left")
+    g = g[g["live_home_spread"].notna() | g["pickem_home_spread"].notna()]
+    return pd.DataFrame([{
+        "league": league, "game_id": r["game_id"], "kickoff_utc": r["kickoff_utc"].isoformat(),
+        "away": r["away"], "home": r["home"], "neutral_site": bool(r["neutral_site"]),
+        "pick_team": None, "pick_side": None, "pick_line": None,
+        "grade_line_kind": "pickem" if pd.notna(r["pickem_home_spread"]) else "live",
+        "pickem_home_spread": r["pickem_home_spread"], "live_home_spread": r["live_home_spread"],
+        "live_fetched_at": str(r["live_fetched_at"]) if pd.notna(r["live_fetched_at"]) else None,
+        "p_cover": None, "edge": None, "key_reason": "No model prediction",
+        "confidence": "Low", "confidence_basis": "not modeled",
+        "flags": "not modeled (non-FBS opponent or no ratings)",
+    } for _, r in g.iterrows()])
+
+
+# ---------------------------------------------------------------- logging
+def _week_dir(week_start) -> Path:
+    return RANKINGS / pd.Timestamp(week_start).strftime("%Y-%m-%d")
+
+
+def previous_rankings(week_start) -> list[dict]:
+    d = _week_dir(week_start)
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(d.glob("*.json"))] if d.exists() else []
+
+
+def apply_locks(table: pd.DataFrame, prior: list[dict], now: datetime) -> pd.DataFrame:
+    """Games that have kicked off keep their last pre-kickoff entry."""
+    table = table.copy()
+    table["locked"] = False
+    started = pd.to_datetime(table["kickoff_utc"], utc=True) <= pd.Timestamp(now)
+    last = {}
+    for rk in prior:
+        for g in rk["games"]:
+            if pd.Timestamp(rk["generated_at"]) < pd.Timestamp(g["kickoff_utc"]):
+                last[g["game_id"]] = g
+    for i in table.index[started]:
+        gid = table.at[i, "game_id"]
+        if gid in last:
+            for k, v in last[gid].items():
+                if k in table.columns and k not in ("rank", "locked"):
+                    table.at[i, k] = v
+            table.at[i, "locked"] = True
+        else:
+            table.at[i, "flags"] = (table.at[i, "flags"] + "; " if table.at[i, "flags"] else "") + \
+                "kicked off before first ranking (not graded)"
+            table.at[i, "locked"] = True
+            table.at[i, "ungradeable"] = True
+    return table
+
+
+def write_ranking(payload: dict, table: pd.DataFrame, week_start, kind: str) -> Path:
+    d = _week_dir(week_start)
+    d.mkdir(parents=True, exist_ok=True)
+    stamp = pd.Timestamp(payload["generated_at"]).strftime("%Y%m%dT%H%M%SZ")
+    jp, cp = d / f"{stamp}_{kind}.json", d / f"{stamp}_{kind}.csv"
+    if jp.exists() or cp.exists():
+        raise FileExistsError(f"{jp} exists; rankings are append-only")
+    jp.write_text(json.dumps(payload, indent=1, default=str), encoding="utf-8")
+    table.to_csv(cp, index=False)
+    return jp
+
+
+# ---------------------------------------------------------------- grading
+def grade(now: datetime | None = None) -> pd.DataFrame:
+    """Grade every finished, logged game not yet in results.csv (append-only).
+    Two versions per game: 'headline' (first ranking of the week, i.e. the
+    Tuesday list) and 'final' (last ranking published before kickoff)."""
+    from .model import data
+    data.games.cache_clear()
+    finals = pd.concat([data.games(lg)[["game_id", "league", "margin", "close_home_spread"]]
+                        for lg in ("NFL", "CFB")])
+    finals = finals[finals["margin"].notna()].set_index(["league", "game_id"])
+    done = set()
+    if RESULTS.exists():
+        prev = pd.read_csv(RESULTS, dtype={"game_id": str})
+        done = set(zip(prev["league"], prev["game_id"], prev["version"]))
+    rows = []
+    for wdir in sorted(RANKINGS.glob("*")) if RANKINGS.exists() else []:
+        ranks = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(wdir.glob("*.json"))]
+        if not ranks:
+            continue
+        entries: dict[tuple, dict] = {}
+        for rk in ranks:
+            for g in rk["games"]:
+                if pd.Timestamp(rk["generated_at"]) >= pd.Timestamp(g["kickoff_utc"]) or g.get("locked"):
+                    continue
+                if not g.get("pick_side"):  # unmodeled game: nothing to grade
+                    continue
+                k = (g["league"], g["game_id"])
+                entries.setdefault(k, {})
+                entries[k].setdefault("headline", {**g, "generated_at": rk["generated_at"]})
+                entries[k]["final"] = {**g, "generated_at": rk["generated_at"]}
+        for (lg, gid), vers in entries.items():
+            if (lg, gid) not in finals.index:
+                continue
+            f = finals.loc[(lg, gid)]
+            for version, g in vers.items():
+                if (lg, gid, version) in done:
+                    continue
+                sgn = 1 if g["pick_side"] == "home" else -1
+                rec = {"week_start": wdir.name, "league": lg, "game_id": gid, "version": version,
+                       "ranked_at": g["generated_at"], "rank": g.get("rank"),
+                       "pick_team": g["pick_team"], "p_cover": g["p_cover"], "edge": g["edge"],
+                       "margin": float(f["margin"]), "graded_at": datetime.now(timezone.utc).isoformat()}
+                for kind, hs in (("pickem", g.get("pickem_home_spread")), ("live", g.get("live_home_spread")),
+                                 ("close", f["close_home_spread"])):
+                    if hs is None or pd.isna(hs):
+                        rec[f"hit_{kind}"] = None
+                        continue
+                    x = sgn * (float(f["margin"]) + float(hs))
+                    rec[f"hit_{kind}"] = None if x == 0 else float(x > 0)  # push = None
+                    rec[f"line_{kind}"] = float(hs)
+                graded = g.get("grade_line_kind", "live")
+                rec["hit_graded"] = rec.get(f"hit_{graded}")
+                rows.append(rec)
+    new = pd.DataFrame(rows)
+    if len(new):
+        RESULTS.parent.mkdir(parents=True, exist_ok=True)
+        new.to_csv(RESULTS, mode="a", header=not RESULTS.exists(), index=False)
+    return new
+
+
+def season_record(season: int) -> dict:
+    """Season-to-date top-5/top-10 records from the Tuesday headline ranking."""
+    if not RESULTS.exists():
+        return {}
+    r = pd.read_csv(RESULTS, dtype={"game_id": str})
+    r = r[(r["version"] == "headline") & (pd.to_datetime(r["week_start"]).map(lambda d: d.year if d.month >= 8 else d.year - 1) == season)]
+    out = {}
+    for label, n in (("top5", 5), ("top10", 10), ("all", None)):
+        x = r if n is None else r[r["rank"] <= n]
+        for col in ("hit_graded", "hit_live", "hit_close"):
+            s = M.hit_summary(x[col])
+            out[f"{label}_{col.replace('hit_', '')}"] = {k: (None if pd.isna(v) else float(v)) for k, v in s.items()}
+    return out
+
+
+# ---------------------------------------------------------------- main entry
+def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -> dict:
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    now = now or datetime.now(timezone.utc)
+    season = current_season(now.date())
+    week_start = pd.Timestamp(football_week_start(now))
+    if kind == "weekly":
+        graded = grade(now)
+        log.info("graded %d new entries", len(graded))
+    odds_info = refresh_data(season) if fetch else {}
+
+    tables, notes = [], []
+    week_games = []
+    from .model import data
+    for lg in ("NFL", "CFB"):
+        data.games.cache_clear()
+        g = data.games(lg)
+        week_games.append(g[g["football_week_start"] == week_start][["league", "game_id", "home", "away"]])
+    pick_lines, pick_info = pickem.load(pd.concat(week_games))
+    if pick_info["file"] is None:
+        notes.append("No pickem file in data/pickem/; all picks graded against the live DraftKings line.")
+    elif pick_info["matched"] == 0:
+        notes.append(f"Pickem file {pick_info['file']} matched no games this week; ignored.")
+
+    for lg in ("NFL", "CFB"):
+        cur, past = predict_league(lg, week_start, now)
+        if cur.empty:
+            notes.append(f"{lg}: no modeled games for week of {week_start.date()}.")
+        else:
+            tables.append(build_table(lg, cur, past, pick_lines, now))
+        tables.append(_unmodeled(lg, week_start, now, set(cur["game_id"]), pick_lines))
+    table = pd.concat(tables, ignore_index=True) if tables else pd.DataFrame()
+    prior = previous_rankings(week_start)
+    if not table.empty:
+        table = apply_locks(table, prior, now)
+        table = table.sort_values("edge", ascending=False, na_position="last").reset_index(drop=True)
+        table.insert(0, "rank", np.arange(1, len(table) + 1))
+
+    payload = {
+        "generated_at": now.isoformat(), "kind": kind, "week_start": str(week_start.date()),
+        "season": season,
+        "sources": {"odds": odds_info, "pickem": pick_info,
+                    "stats": "nflverse (nflreadpy), CollegeFootballData.com"},
+        "notes": notes,
+        "season_record": season_record(season),
+        "games": json.loads(table.to_json(orient="records")) if not table.empty else [],
+    }
+    path = write_ranking(payload, table, week_start, kind)
+    SITE_DATA.mkdir(parents=True, exist_ok=True)
+    (SITE_DATA / "latest.json").write_text(json.dumps(payload, indent=1, default=str), encoding="utf-8")
+    if RESULTS.exists():
+        pd.read_csv(RESULTS).to_json(SITE_DATA / "results.json", orient="records", indent=1)
+    payload["path"] = str(path)
+    return payload
