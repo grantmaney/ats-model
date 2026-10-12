@@ -381,9 +381,10 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
         week_games.append(g[g["football_week_start"] == week_start][["league", "game_id", "home", "away"]])
     pick_lines, pick_info = pickem.load(pd.concat(week_games))
     if pick_info["file"] is None:
-        notes.append("No pickem file in data/pickem/; all picks graded against the live DraftKings line.")
-    elif pick_info["matched"] == 0:
-        notes.append(f"Pickem file {pick_info['file']} matched no games this week; ignored.")
+        notes.append("No pool sheet for this week yet (it arrives Thursday); picks use the live DraftKings line.")
+    elif pick_info["unparsed"]:
+        notes.append(f"Pool sheet {pick_info['file']}: {pick_info['matched']} games matched; "
+                     f"{len(pick_info['unparsed'])} lines could not be matched (see sources.pickem.unparsed).")
 
     for lg in ("NFL", "CFB"):
         cur, past = predict_league(lg, week_start, now)

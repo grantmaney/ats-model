@@ -40,6 +40,20 @@ def test_pickem_pk_and_away_favorite():
     assert got == {"g1": 2.5, "g2": 0.0}
 
 
+def test_pickem_uses_the_sheet_that_matches_this_week(tmp_path):
+    (tmp_path / "week5.csv").write_text("league,away,home,home_spread\nNFL,Jets,Patriots,-3\n")
+    (tmp_path / "week6.csv").write_text("league,away,home,home_spread\nNFL,Raiders,Chiefs,-7.5\nNFL,Cowboys,Eagles,-3\n")
+    lines, info = pickem.load(WEEK, folder=tmp_path)
+    assert info["file"] == "week6.csv" and info["matched"] == 2
+    assert lines.set_index("game_id")["pickem_home_spread"].to_dict() == {"g1": -7.5, "g2": -3.0}
+
+
+def test_no_sheet_for_this_week_means_live_lines(tmp_path):
+    (tmp_path / "week5.csv").write_text("league,away,home,home_spread\nNFL,Jets,Patriots,-3\n")
+    lines, info = pickem.load(WEEK, folder=tmp_path)
+    assert info["file"] is None and lines.empty
+
+
 def _ranking(gen, games):
     return {"generated_at": gen, "games": games}
 

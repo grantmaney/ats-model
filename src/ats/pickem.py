@@ -1,7 +1,8 @@
 """Pickem-line slot: parse the weekly pool sheet in data/pickem/ and match it
 to this week's games.
 
-Sources, newest file wins:
+Every sheet in the folder is tried; the one that matches the most of this
+week's games is used (so past weeks' sheets can stay). Formats:
 - CSV  (exact, recommended fallback): columns league,away,home,home_spread
 - PDF  ("ROWANSPOOL 2026 - Football Pickem"): best-effort text parser.
   Heuristic until we've seen a real sheet: on each text line, the spread
@@ -9,8 +10,9 @@ Sources, newest file wins:
   ("Chiefs -3.5 Raiders" -> Chiefs -3.5). Home/away always come from the
   schedule, never from the sheet. Unparsed lines are reported, not guessed.
 
-The pickem line is fixed once published; we record the file name and its
-modification time as the line's source/timestamp.
+The pickem line is fixed once published; we record the file name and when it
+was committed to the repo as the line's source/timestamp. Until a sheet for
+the current week is present, picks use the live DraftKings line.
 """
 from __future__ import annotations
 
@@ -25,18 +27,13 @@ from .config import PICKEM
 from .teams import to_canonical
 
 log = logging.getLogger(__name__)
-NUM = re.compile(r"(?<![\w.])([+-]?\d{1,2}(?:\.5|½)?|PK|pk|EVEN|even)(?![\w.])")
-
-
-def latest_file(folder: Path = PICKEM) -> Path | None:
-    files = [p for p in folder.glob("*") if p.suffix.lower() in (".pdf", ".csv")]
-    return max(files, key=lambda p: p.stat().st_mtime) if files else None
+NUM = re.compile(r"(?<![\w.])([+-]?\d{1,2}(?:\.5|Ã‚Â½)?|PK|pk|EVEN|even)(?![\w.])")
 
 
 def _num(tok: str) -> float:
     if tok.lower() in ("pk", "even"):
         return 0.0
-    return float(tok.replace("½", ".5"))
+    return float(tok.replace("Ã‚Â½", ".5"))
 
 
 def pdf_lines(path: Path) -> list[str]:
@@ -81,14 +78,46 @@ def parse_lines(lines: list[str], week_games: pd.DataFrame) -> tuple[pd.DataFram
     return pd.DataFrame(rows), unparsed
 
 
-def load(week_games: pd.DataFrame, path: Path | None = None) -> tuple[pd.DataFrame, dict]:
-    """Pickem lines for this week's games. Returns (lines, info)."""
-    path = path or latest_file()
-    info = {"file": None, "file_mtime": None, "matched": 0, "unparsed": []}
-    if path is None:
-        return pd.DataFrame(columns=["game_id", "pickem_home_spread"]), info
-    info["file"] = path.name
-    info["file_mtime"] = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+def added_at(path: Path) -> str:
+    """When the sheet entered the repo (git commit time); file mtime is
+    meaningless on CI checkouts, so it is only a local fallback."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", "log", "-1", "--format=%cI", "--", str(path)], cwd=path.parent,
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+        if out:
+            return out
+    except Exception:
+        pass
+    return datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+
+
+EMPTY = pd.DataFrame(columns=["game_id", "pickem_home_spread"])
+
+
+def load(week_games: pd.DataFrame, path: Path | None = None, folder: Path | None = None
+         ) -> tuple[pd.DataFrame, dict]:
+    """Pickem lines for this week's games. With no explicit path, every sheet in
+    data/pickem/ is tried and the one matching the most of this week's games
+    wins, so old weeks' sheets can stay in the folder. Returns (lines, info)."""
+    if path is not None:
+        return _load_one(path, week_games)
+    folder = folder or PICKEM
+    files = sorted(p for p in folder.glob("*") if p.suffix.lower() in (".pdf", ".csv"))
+    best = (EMPTY, {"file": None, "added_at": None, "matched": 0, "unparsed": []})
+    for p in files:
+        try:
+            lines, info = _load_one(p, week_games)
+        except Exception as e:  # one unreadable sheet shouldn't block the run
+            log.warning("could not read pickem file %s: %s", p.name, e)
+            continue
+        if info["matched"] > best[1]["matched"]:
+            best = (lines, info)
+    return best
+
+
+def _load_one(path: Path, week_games: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    info = {"file": path.name, "added_at": added_at(path), "matched": 0, "unparsed": []}
     if path.suffix.lower() == ".csv":
         c = pd.read_csv(path)
         out = []
@@ -103,8 +132,8 @@ def load(week_games: pd.DataFrame, path: Path | None = None) -> tuple[pd.DataFra
         unparsed = []
     else:
         lines, unparsed = parse_lines(pdf_lines(path), week_games)
+    if lines.empty:
+        return EMPTY, info
     lines = lines.drop_duplicates("game_id", keep="first")
     info["matched"], info["unparsed"] = len(lines), unparsed[:50]
-    if len(lines) == 0:
-        log.warning("pickem file %s matched no games this week; ignoring it", path.name)
     return lines[["game_id", "pickem_home_spread"]], info
