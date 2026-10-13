@@ -18,7 +18,8 @@ def normal_cover_prob(pred_margin, line, sigma):
 
 
 def empirical_cover_prob(pred_margin: np.ndarray, line: np.ndarray,
-                         hist_margin: np.ndarray, hist_line: np.ndarray) -> np.ndarray:
+                         hist_margin: np.ndarray, hist_line: np.ndarray,
+                         shape_line: np.ndarray | None = None) -> np.ndarray:
     """NFL key-number-aware probability.
 
     For a game with line s, take historical games whose line was within a
@@ -26,20 +27,25 @@ def empirical_cover_prob(pred_margin: np.ndarray, line: np.ndarray,
     use their actual margins as the market-implied margin distribution. That
     keeps the clustering at 3, 7, 10... Shift it by the model's disagreement
     delta = pred + s, then P(cover) = P(M + delta > -s | M + delta != -s).
+    `shape_line` (default `line`) is the market line whose window supplies
+    M; `line` is the line being graded, so a stale pickem line is priced
+    against the live market's distribution.
     hist_* must contain only games before the prediction cutoff.
     """
     hm = np.concatenate([hist_margin, -hist_margin]).astype(float)
     hl = np.concatenate([hist_line, -hist_line]).astype(float)
     out = np.empty(len(line))
-    for i, (pm, s) in enumerate(zip(np.asarray(pred_margin, float), np.asarray(line, float))):
+    line = np.asarray(line, float)
+    shape = line if shape_line is None else np.asarray(shape_line, float)
+    for i, (pm, g, s) in enumerate(zip(np.asarray(pred_margin, float), line, shape)):
         win = 0.5
         sel = np.abs(hl - s) <= win
         while sel.sum() < MIN_EMPIRICAL and win < 7:
             win += 0.5
             sel = np.abs(hl - s) <= win
-        M = hm[sel]
-        delta = pm + s
-        x = M + delta + s           # > 0 means home covers
+        M = hm[sel]                 # margins of games lined near s: centred near -s
+        delta = pm + s              # shift so the distribution centres on pm
+        x = M + delta + g           # > 0 means home covers the grading line g
         cover, lose = (x > 1e-9).sum(), (x < -1e-9).sum()
         out[i] = cover / (cover + lose) if cover + lose else 0.5
     return out

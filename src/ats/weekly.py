@@ -99,6 +99,8 @@ def predict_league(league: str, week_start: pd.Timestamp, now: datetime) -> tupl
 
 
 def _confidence_table(league: str) -> pd.DataFrame | None:
+    """league = 'NFL' / 'CFB' (graded vs the live line) or 'stale' (graded vs
+    a pickem line the market may have moved away from)."""
     p = ROOT / "reports" / f"edge_table_{league.lower()}.csv"
     return pd.read_csv(p) if p.exists() else None
 
@@ -150,13 +152,16 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
     if has.any():
         as_of = W.cutoff(cur["football_week_start"].iloc[0])
         probs = W.cover_probs(league, past, cur.loc[has, "pred3"].to_numpy(float),
-                              cur.loc[has, "grade_line"].to_numpy(float), float(cur.loc[has, "sigma"].iloc[0]), as_of)
+                              cur.loc[has, "grade_line"].to_numpy(float), as_of,
+                              market_line=cur.loc[has, "line"].to_numpy(float))
         cur.loc[has, "p_home"] = probs["p_cal"]
         cur.loc[has, "calibrated"] = probs["calibrated"]
+        cur.loc[has, "w_model"] = probs["w_model"]
+        cur.loc[has, "centre"] = probs["centre"]
     cur["pick_home"] = cur["p_home"].fillna(0.5) >= 0.5
     cur["p_pick"] = np.where(cur["pick_home"], cur["p_home"], 1 - cur["p_home"])
     cur["edge"] = cur["p_pick"] - 0.5
-    ctab = _confidence_table(league)
+    ctab, stab = _confidence_table(league), _confidence_table("stale")
     rows = []
     for _, r in cur.iterrows():
         sgn = 1 if r["pick_home"] else -1
@@ -170,7 +175,7 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
             flags.append("no model prediction")
         if r.get("calibrated", 1) == 0:
             flags.append("uncalibrated")
-        conf, conf_why = confidence(r["edge"], ctab)
+        conf, conf_why = confidence(r["edge"], stab if r["grade_line_kind"] == "pickem" else ctab)
         rows.append({
             "league": league, "game_id": r["game_id"], "kickoff_utc": r["kickoff_utc"].isoformat(),
             "away": r["away"], "home": r["home"], "neutral_site": bool(r["neutral_site"]),
@@ -181,7 +186,9 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
             "live_home_spread": r.get("live_home_spread"),
             "live_fetched_at": str(r.get("live_fetched_at")) if pd.notna(r.get("live_fetched_at")) else None,
             "market_line_source": r.get("market_line_source"),
-            "model_fair_home_spread": -r["pred3"] if pd.notna(r["pred3"]) else None,
+            # fair line = market moved toward the model by the backtested weight w
+            "model_fair_home_spread": -r["centre"] if pd.notna(r.get("centre")) else None,
+            "model_weight": r.get("w_model"),
             "ratings_fair_home_spread": -r["pred2"] if pd.notna(r["pred2"]) else None,
             "sigma": r.get("sigma"),
             "p_cover": r["p_pick"], "edge": r["edge"],
@@ -381,7 +388,10 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
         week_games.append(g[g["football_week_start"] == week_start][["league", "game_id", "home", "away"]])
     pick_lines, pick_info = pickem.load(pd.concat(week_games))
     if pick_info["file"] is None:
-        notes.append("No pool sheet for this week yet (it arrives Thursday); picks use the live DraftKings line.")
+        notes.append("No pool sheet for this week yet (it arrives Thursday); picks use the live DraftKings line. "
+                     "Against the live line every game is close to a coin flip (NFL model weight is 0, so NFL "
+                     "games show no edge at all); the ordering only becomes meaningful once pool lines differ "
+                     "from the market.")
     elif pick_info["unparsed"]:
         notes.append(f"Pool sheet {pick_info['file']}: {pick_info['matched']} games matched; "
                      f"{len(pick_info['unparsed'])} lines could not be matched (see sources.pickem.unparsed).")

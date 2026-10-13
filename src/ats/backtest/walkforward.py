@@ -6,8 +6,15 @@ For each week W (cutoff = Tuesday 00:00 Pacific starting W):
   2. Model 2 (ratings ridge, no market input) is fit on all earlier games.
   3. Model 3 (blend) regresses margin on -line and model 2's OUT-OF-SAMPLE
      predictions from earlier weeks.
-  4. sigma, the NFL empirical margin distribution and the calibrator all use
-     only earlier weeks' out-of-sample rows.
+  4. Cover probability is centred on the MARKET line, moved toward model 3
+     only by a shrinkage weight w in [0, 1] fit on earlier weeks' OOS rows
+     (how much of model 3's disagreement with the market actually showed up
+     in results). No side/home intercept, so no blanket road-team tilt.
+  5. The grading line can differ from the market line (pickem sheet vs live
+     DraftKings). A stale grading line the market has moved away from is
+     priced directly by that gap.
+sigma, the NFL empirical margin distribution and w all use only earlier
+weeks' out-of-sample rows.
 Every fit records the latest kickoff it saw and asserts it is before the
 cutoff (LeakageError otherwise).
 """
@@ -23,7 +30,7 @@ from sklearn.preprocessing import StandardScaler
 
 from ..config import WEEK_TZ
 from ..model import ratings as R
-from ..model.probability import LogitCalibrator, empirical_cover_prob, normal_cover_prob, outcome
+from ..model.probability import empirical_cover_prob, normal_cover_prob, outcome
 
 log = logging.getLogger(__name__)
 
@@ -67,9 +74,12 @@ def build_frame(league: str, games: pd.DataFrame, obs: pd.DataFrame, params: R.P
 
 def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "close_home_spread",
         eval_from: int | None = None, frame: pd.DataFrame | None = None,
-        features: list[str] | None = None) -> pd.DataFrame:
+        features: list[str] | None = None, grade_col: str | None = None) -> pd.DataFrame:
     """Return one row per game (from the first predictable week) with all
-    model outputs. Rows with season >= eval_from are the reported sample."""
+    model outputs. Rows with season >= eval_from are the reported sample.
+    `line_col` is the market line the model sees; `grade_col` (default: same)
+    is the line picks are scored against, e.g. the opener as a stand-in for a
+    stale pickem line while the model sees the close."""
     feats = list(features or FEATURES)
     cfg = LEAGUE_DEFAULTS[league]
     eval_from = eval_from or cfg["eval_from"]
@@ -77,8 +87,10 @@ def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "cl
     df = df.copy()
     df["line"] = df[line_col].astype(float)
     df["margin_f"] = df["margin"].astype(float)
-    df["y"] = outcome(df["margin"], df["line"])
-    for c in ("pred2", "pred3", "p2", "p_raw", "p_norm", "p_cal", "sigma", "calibrated", "m3_w_model", "m3_w_mkt"):
+    df["grade_line"] = df[grade_col or line_col].astype(float)
+    df["y"] = outcome(df["margin"], df["grade_line"])
+    for c in ("pred2", "pred3", "p2", "p_raw", "p_norm", "p_cal", "sigma", "calibrated", "m3_w_model", "m3_w_mkt",
+              "w_model"):
         df[c] = np.nan
 
     for wk in sorted(df["football_week_start"].unique()):
@@ -101,7 +113,7 @@ def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "cl
         if len(tr3) < MIN_TRAIN_M3:
             continue
         m3 = LinearRegression().fit(np.column_stack([-tr3["line"], tr3["pred2"]]), tr3["margin_f"])
-        has_line = now & df["line"].notna()
+        has_line = now & df["line"].notna() & df["grade_line"].notna()
         if not has_line.any():
             continue
         df.loc[has_line, "pred3"] = m3.predict(np.column_stack([-df.loc[has_line, "line"],
@@ -112,7 +124,8 @@ def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "cl
         sigma = r3.std() if len(r3) >= MIN_TRAIN_M3 else (tr3["margin_f"] + tr3["line"]).std()
         df.loc[has_line, "sigma"] = sigma
         probs = cover_probs(league, df[past], df.loc[has_line, "pred3"].to_numpy(),
-                            df.loc[has_line, "line"].to_numpy(), sigma, as_of)
+                            df.loc[has_line, "grade_line"].to_numpy(), as_of,
+                            market_line=df.loc[has_line, "line"].to_numpy())
         for k, v in probs.items():
             df.loc[has_line, k] = v
 
@@ -121,25 +134,62 @@ def run(league: str, games: pd.DataFrame, obs: pd.DataFrame, line_col: str = "cl
     return df
 
 
+def model_weight(past: pd.DataFrame) -> tuple[float, float]:
+    """(w, mean_d): how far to move from the market toward model 3.
+    d = pred3 + line (model's disagreement with the market, points), centred
+    on its past mean so a constant offset (e.g. a home/road base rate) can't
+    tilt every game the same way. w = least-squares slope of the market
+    residual (margin + line) on d, clipped to [0, 1]: 0 = trust the market,
+    1 = trust the model. Uses earlier OOS rows only."""
+    r = past[past["pred3"].notna() & past["line"].notna() & past["margin_f"].notna()]
+    if len(r) < MIN_CALIB:
+        return 0.0, 0.0
+    d = (r["pred3"] + r["line"]).to_numpy(float)
+    mean_d = float(d.mean())
+    d = d - mean_d
+    resid = (r["margin_f"] + r["line"]).to_numpy(float)
+    resid = resid - resid.mean()
+    w = float((d * resid).sum() / (d * d).sum()) if (d * d).sum() > 0 else 0.0
+    return float(np.clip(w, 0.0, 1.0)), mean_d
+
+
 def cover_probs(league: str, past: pd.DataFrame, pred3: np.ndarray, line: np.ndarray,
-                sigma: float, as_of: pd.Timestamp) -> dict[str, np.ndarray]:
-    """P(home covers) for games with blended margin `pred3` against `line`.
-    `past` = earlier rows of the same walk-forward frame (margin_f, line,
-    p_raw, y); used for the NFL empirical distribution and calibration only."""
+                as_of: pd.Timestamp, market_line: np.ndarray | None = None) -> dict[str, np.ndarray]:
+    """P(home covers `line`), the grading line.
+
+    centre = -market_line + w * (d - mean_d), d = pred3 + market_line.
+    NFL: empirical margin distribution around the market line (key numbers).
+    CFB: normal with sigma = SD of past market residuals (margin + line).
+    `past` = earlier rows of the same walk-forward frame."""
     _check(past, as_of, "cover_probs")
-    p_norm = normal_cover_prob(pred3, line, sigma)
+    line = np.asarray(line, float)
+    mkt = line if market_line is None else np.asarray(market_line, float)
+    w, mean_d = model_weight(past)
+    centre = -mkt + w * (np.asarray(pred3, float) + mkt - mean_d)
+    hist = past[past["line"].notna() & past["margin_f"].notna()]
+    sigma = float((hist["margin_f"] + hist["line"]).std())
+    p_norm = normal_cover_prob(centre, line, sigma)
     if LEAGUE_DEFAULTS[league]["use_empirical"]:
-        hist = past[past["line"].notna() & past["margin_f"].notna()]
-        p_raw = empirical_cover_prob(pred3, line, hist["margin_f"].to_numpy(), hist["line"].to_numpy())
+        # Distribution shape comes from games lined near the market line,
+        # shifted to the centre, and is evaluated against the grading line.
+        hm, hl = hist["margin_f"].to_numpy(), hist["line"].to_numpy()
+        # Margins are whole points, so a model shift is applied in half-point
+        # steps; otherwise a 0.1-pt nudge would turn every push on a key
+        # number into a loss and fake a large edge.
+        shift = np.round(2 * (centre + mkt)) / 2
+        p_emp = empirical_cover_prob(-mkt + shift, line, hm, hl, shape_line=mkt)
+        # Measure relative to the market line itself, which is a coin flip by
+        # assumption. Without this, each line's historical cover rate (e.g.
+        # "home -3 covered 47%") shows up as a fake edge; out of sample those
+        # line-specific rates did not hold up. What remains is the model shift
+        # plus the gap to the grading line, priced with key-number mass.
+        p_base = empirical_cover_prob(-mkt, mkt, hm, hl, shape_line=mkt)
+        p_raw = np.clip(p_emp - p_base + 0.5, 0.01, 0.99)
     else:
         p_raw = p_norm
-    cal_rows = past[past["p_raw"].notna() & past["y"].notna()]
-    if len(cal_rows) >= MIN_CALIB:
-        p_cal = LogitCalibrator().fit(cal_rows["p_raw"], cal_rows["y"]).predict(p_raw)
-        calibrated = np.ones(len(line))
-    else:
-        p_cal, calibrated = p_raw, np.zeros(len(line))
-    return {"p_norm": p_norm, "p_raw": p_raw, "p_cal": p_cal, "calibrated": calibrated}
+    calibrated = np.full(len(line), float(len(hist) >= MIN_CALIB))
+    return {"p_norm": p_norm, "p_raw": p_raw, "p_cal": p_raw, "calibrated": calibrated,
+            "w_model": np.full(len(line), w), "centre": centre}
 
 
 def scramble_after(games: pd.DataFrame, obs: pd.DataFrame, as_of: pd.Timestamp,

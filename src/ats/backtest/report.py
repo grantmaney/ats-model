@@ -2,7 +2,9 @@
 
 Configurations:
   NFL vs closing line; CFB vs closing line; CFB vs opening line (2023+,
-  the only seasons CFBD has DraftKings openers); combined NFL+CFB at close.
+  the only seasons CFBD has DraftKings openers); CFB stale line (model sees
+  the close, picks graded against the opener: the pickem-sheet situation);
+  combined NFL+CFB at close.
 Placebo runs (scores shuffled within season) for NFL-close and CFB-open.
 Predictions are saved to data/backtest/ for inspection.
 """
@@ -52,8 +54,12 @@ def _section(name: str, df: pd.DataFrame, with_clv: bool = False) -> tuple[list[
          f"ratings-only {b_m2['brier']:.4f}.", "",
          "**ATS hit rate of top-N picks per week** (pushes excluded)", "",
          "| Picks | Record |", "|---|---|"]
-    for n in (5, 10, None):
+    for n in (5, 6, 10, None):
         L.append(f"| {'All games' if n is None else f'Top {n}'} | {_fmt_hit(M.hit_summary(M.top_n(d, n)['hit']))} |")
+    w_used = e["w_model"].dropna()
+    if len(w_used):
+        L += ["", f"Model weight w (share of the model's disagreement with the market that is used): "
+              f"first {w_used.iloc[0]:.2f}, last {w_used.iloc[-1]:.2f}, mean {w_used.mean():.2f}."]
     if with_clv:
         L += ["", "**Closing-line value of picks made at the open** (points the line moved toward our side)", "",
               "| Picks | n | Mean move | % toward us | % away |", "|---|---|---|---|---|"]
@@ -117,12 +123,18 @@ def run_all(placebo: bool = True) -> str:
     frame_c = W.build_frame("CFB", gc, oc)
     runs["CFB close"] = W.run("CFB", gc, oc, frame=frame_c)
     runs["CFB open"] = W.run("CFB", gc, oc, line_col="open_home_spread", frame=frame_c)
+    runs["CFB stale"] = W.run("CFB", gc, oc, line_col="close_home_spread", grade_col="open_home_spread",
+                              frame=frame_c)
     for k, v in runs.items():
         v.to_parquet(OUT / f"{k.replace(' ', '_').lower()}.parquet", index=False)
     # Small committed tables the weekly run uses for Low/Medium/High confidence.
     for lg in ("NFL", "CFB"):
         bt = runs[f"{lg} close"]
         M.by_edge(M.picks(bt[bt["eval"]], "p_cal")).to_csv(REPORTS / f"edge_table_{lg.lower()}.csv", index=False)
+    # Picks graded against a stale (pickem) line: confidence comes from this.
+    st = runs["CFB stale"]
+    M.by_edge(M.picks(st[st["eval"] & st["y"].notna()], "p_cal")).to_csv(REPORTS / "edge_table_stale.csv",
+                                                                          index=False)
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     L = ["# Walk-forward backtest", "", f"Generated {now}. Regenerate with `python -m ats backtest`.", "",
@@ -132,11 +144,19 @@ def run_all(placebo: bool = True) -> str:
          "before running and not tuned on these results.", "",
          "Break-even at -110 is 52.4%. A hit rate whose CI includes 50% is not distinguishable from a coin flip.", ""]
     cts = {}
-    for name, with_clv in (("NFL close", False), ("CFB close", False), ("CFB open", True)):
-        sec, ct = _section({"NFL close": "NFL vs closing line", "CFB close": "CFB (FBS v FBS) vs closing line",
-                            "CFB open": "CFB (FBS v FBS) vs opening line"}[name], runs[name], with_clv)
+    titles = {"NFL close": "NFL vs closing line", "CFB close": "CFB (FBS v FBS) vs closing line",
+              "CFB open": "CFB (FBS v FBS) vs opening line",
+              "CFB stale": "CFB stale line: model sees the close, graded against the opener"}
+    for name, with_clv in (("NFL close", False), ("CFB close", False), ("CFB open", True), ("CFB stale", False)):
+        sec, ct = _section(titles[name], runs[name], with_clv)
+        if name == "CFB stale":
+            sec[1:1] = ["", "Stand-in for the pickem sheet: a fixed line set early in the week, while the model "
+                        "sees a later market line. This is optimistic, because the close is the latest possible "
+                        "line and the live line at Friday's deadline has moved less. Only seasons with openers "
+                        "(2023+) are graded."]
         L += sec
-        cts[name] = ct
+        if name != "CFB stale":
+            cts[name] = ct
 
     # Combined ranking at the close, per CLAUDE.md: calibrated edge across leagues.
     comb = pd.concat([M.picks(runs[k][runs[k]["eval"]], "p_cal").assign(lg=k.split()[0])
