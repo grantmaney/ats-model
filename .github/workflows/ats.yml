@@ -2,15 +2,22 @@ name: ATS ranking
 
 on:
   schedule:
-    # GitHub cron is UTC. 13:30 UTC = 6:30am PDT / 5:30am PST (Tuesday main run)
-    - cron: "30 13 * * 2"
-    # 14:00 UTC = 7:00am PDT / 6:00am PST, every day but Tuesday. Before the
-    # Friday deadline this re-ranks; after it, the list is frozen and the run
-    # only pulls results and grades.
-    - cron: "0 14 * * 0,1,3,4,5,6"
-    # Last refresh before the Friday 10pm PT deadline:
-    # Sat 03:30 UTC = Fri 8:30pm PDT / 7:30pm PST.
-    - cron: "30 3 * * 6"
+    # GitHub cron is UTC and scheduled runs can start late or be skipped when
+    # GitHub is busy (worst at :00 and :30), so times use odd minutes and each
+    # slot has a backup a couple of hours later. Extra runs are harmless:
+    # rankings are append-only and the headline is the week's first ranking.
+    # Tuesday main run: 13:17 UTC = 6:17am PDT / 5:17am PST; backup 15:47.
+    - cron: "17 13 * * 2"
+    - cron: "47 15 * * 2"
+    # Daily (not Tuesday): 14:07 UTC = 7:07am PDT / 6:07am PST; backup 16:37.
+    # Before the Friday deadline this re-ranks; after it, the list is frozen
+    # and the run only pulls results and grades.
+    - cron: "7 14 * * 0,1,3,4,5,6"
+    - cron: "37 16 * * 0,1,3,4,5,6"
+    # Last refreshes before the Friday 10pm PT deadline:
+    # Sat 02:43 UTC = Fri 7:43pm PDT / 6:43pm PST; backup Fri 8:53pm PDT.
+    - cron: "43 2 * * 6"
+    - cron: "53 3 * * 6"
   workflow_dispatch:
     inputs:
       kind:
@@ -57,7 +64,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "kind=${{ inputs.kind }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "30 13 * * 2" ]; then
+          elif [ "$(TZ=America/Los_Angeles date +%u)" = "2" ]; then
+            # Any scheduled run on a Pacific Tuesday is the weekly run.
             echo "kind=weekly" >> "$GITHUB_OUTPUT"
           else
             echo "kind=refresh" >> "$GITHUB_OUTPUT"
