@@ -73,14 +73,14 @@
   <div class="wrap">
     <table>
       <thead><tr>
-        <th class="num">Rank</th><th>League</th><th>Pick (team + line)</th><th class="num">Pickem line</th>
-        <th class="num">Live line</th><th class="num">Model fair line</th><th class="num">P(cover)</th>
+        <th class="num">Rank</th><th>League</th><th>Pick (team + line)</th><th class="num">Pool sheet line</th>
+        <th class="num">Live line (DK)</th><th class="num">Model fair line</th><th class="num">P(cover)</th>
         <th class="num">Edge</th><th>Key reason</th><th>Confidence</th><th>Kickoff</th><th>Result</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
-  <p class="muted">Lines are home-team spreads (negative = home favored) except "Pick", which is from the picked team's side. Greyed rows are locked. Games that started before the week's first ranking have no pick and are not graded. Probabilities are estimates, not guarantees; most games are close to coin flips.</p>
+  <p class="muted">All lines are from the picked team's side (negative = that team is favored); games with no pick show the home team's side. "Pool sheet line" is the line on your pool sheet, the one picks are scored on. "Live line" is the current DraftKings spread. Greyed rows are locked. Games that started before the week's first ranking have no pick and are not graded. Probabilities are estimates, not guarantees; most games are close to coin flips.</p>
 
   <footer id="footer"></footer>
 </main>
@@ -116,14 +116,17 @@ function render() {
   if (d.status === "locked") { st.className = "status locked"; st.textContent = `Picks locked (deadline ${lockTxt}). Results fill in as games finish.`; }
   else { st.className = "status"; st.textContent = lockAt ? `Open: list refreshes until the submission deadline, ${lockTxt}.` : ""; }
   const games = (d.games || []).filter(g => FILTER === "all" || g.league === FILTER);
+  // Line columns are shown from the picked team's side (home side if no pick).
+  const side = g => g.pick_side === "away" ? -1 : 1;
+  const sideLine = (g, x) => x == null ? null : side(g) * x;
   document.getElementById("rows").innerHTML = games.map(g => `
     <tr class="${g.unranked || g.rank == null ? "unranked" : (g.locked ? "locked" : "")}">
       <td class="num">${g.rank ?? "—"}</td>
       <td><span class="lg">${esc(g.league)}</span></td>
       <td><span class="pick">${g.pick_team ? esc(g.pick_team) + " " + fmtLine(g.pick_line) : "No pick"}</span><div class="muted">${esc(g.away)} @ ${esc(g.home)}${g.neutral_site ? " (neutral)" : ""}</div></td>
-      <td class="num">${fmtLine(g.pickem_home_spread)}</td>
-      <td class="num">${fmtLine(g.live_home_spread)}</td>
-      <td class="num">${fmtLine(g.model_fair_home_spread)}</td>
+      <td class="num">${fmtLine(sideLine(g, g.pickem_home_spread))}</td>
+      <td class="num">${fmtLine(sideLine(g, g.live_home_spread))}</td>
+      <td class="num">${fmtLine(sideLine(g, g.model_fair_home_spread))}</td>
       <td class="num">${pct(g.p_cover)}</td>
       <td class="num">${g.edge == null ? "—" : (g.edge >= 0 ? "+" : "") + (100 * g.edge).toFixed(1)}</td>
       <td class="reason">${esc(g.key_reason)}${g.flags ? `<div class="flags">${esc(g.flags)}</div>` : ""}</td>
