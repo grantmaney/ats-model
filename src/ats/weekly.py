@@ -386,7 +386,14 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
         data.games.cache_clear()
         g = data.games(lg)
         week_games.append(g[g["football_week_start"] == week_start][["league", "game_id", "home", "away"]])
-    pick_lines, pick_info = pickem.load(pd.concat(week_games))
+    week_games = pd.concat(week_games)
+    for c in pickem.convert_pdfs(week_games):
+        if c["csv"] is None:
+            notes.append(f"Pool sheet {c['pdf']} matched none of this week's games and was not used.")
+        elif c["unparsed"]:
+            notes.append(f"Pool sheet {c['pdf']}: {len(c['unparsed'])} rows could not be matched: "
+                         + "; ".join(c["unparsed"][:5]))
+    pick_lines, pick_info = pickem.load(week_games)
     if pick_info["file"] is None:
         notes.append("No pool sheet for this week yet (it arrives Thursday); picks use the live DraftKings line. "
                      "Against the live line every game is close to a coin flip (NFL model weight is 0, so NFL "

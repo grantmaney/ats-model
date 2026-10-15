@@ -162,6 +162,20 @@ def cmd_grade(args) -> None:
     print(f"graded {len(new)} new entries")
 
 
+def cmd_pickem(args) -> None:
+    """Convert pool-sheet PDFs in data/pickem/ to CSVs (PDF deleted)."""
+    from . import pickem
+    from .model import data
+    from .weeks import football_week_start
+    week_start = pd.Timestamp(football_week_start(pd.Timestamp.now(tz="UTC")))
+    wg = pd.concat([data.games(lg).loc[lambda g: g["football_week_start"] == week_start,
+                                       ["league", "game_id", "home", "away"]] for lg in ("NFL", "CFB")])
+    for c in pickem.convert_pdfs(wg):
+        print(f"{c['pdf']} -> {c['csv'] or 'NOT converted (no games matched)'}: {c['matched']} games")
+        for u in c["unparsed"]:
+            print("  unmatched:", u)
+
+
 def cmd_backtest(args) -> None:
     import warnings
     from .backtest.report import run_all
@@ -193,6 +207,9 @@ def main(argv: list[str] | None = None) -> None:
         w = sub.add_parser(name, help=hlp)
         w.add_argument("--no-fetch", action="store_true", help="use cached data/odds only")
         w.set_defaults(func=cmd_weekly, kind=name)
+
+    pk = sub.add_parser("pickem", help="convert pool-sheet PDFs in data/pickem/ to CSV (removes the PDF)")
+    pk.set_defaults(func=cmd_pickem)
 
     gr = sub.add_parser("grade", help="grade logged rankings for finished games")
     gr.set_defaults(func=cmd_grade)

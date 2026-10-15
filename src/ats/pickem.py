@@ -14,6 +14,11 @@ week's games is used (so past weeks' sheets can stay). Formats:
   immediately before it ("Chiefs -3.5 Raiders" -> Chiefs -3.5).
   Unparsed rows are reported, not guessed.
 
+PDFs are not kept: convert_pdfs() turns each one into a CSV holding only
+league, away, home and home_spread, then deletes the PDF, so the member name
+printed on the sheet never stays in the repo. The weekly run does this
+before reading lines, and `python -m ats pickem` does it locally.
+
 The pickem line is fixed once published; we record the file name and when it
 was committed to the repo as the line's source/timestamp. Until a sheet for
 the current week is present, picks use the live DraftKings line.
@@ -139,6 +144,40 @@ def added_at(path: Path) -> str:
 
 
 EMPTY = pd.DataFrame(columns=["game_id", "pickem_home_spread"])
+
+
+def _csv_name(text: list[str], pdf: Path) -> str:
+    season = next((m[1] for ln in text if (m := re.match(r"Season:\s*(\d{4})", ln))), None)
+    week = next((m[1] for ln in text if (m := re.match(r"Week:\s*Week\s*(\d+)", ln))), None)
+    if season and week:
+        return f"{season}-week{int(week):02d}-pool.csv"
+    return re.sub(r"[^A-Za-z0-9]+", "-", pdf.stem).strip("-").lower() + ".csv"
+
+
+def convert_pdfs(week_games: pd.DataFrame, folder: Path | None = None) -> list[dict]:
+    """Replace every pool-sheet PDF in the folder with a CSV of its lines
+    (no member name or other sheet text). A PDF none of whose games match
+    this week's schedule is left in place and reported, so nothing is lost."""
+    folder = folder or PICKEM
+    report = []
+    for pdf in sorted(p for p in folder.glob("*") if p.suffix.lower() == ".pdf"):
+        text = pdf_lines(pdf)
+        parse = parse_rowanspool if is_rowanspool(text) else parse_lines
+        lines, unparsed = parse(text, week_games)
+        item = {"pdf": pdf.name, "matched": len(lines), "unparsed": unparsed, "csv": None}
+        if len(lines):
+            out = folder / _csv_name(text, pdf)
+            (lines.drop_duplicates("game_id")
+                  .rename(columns={"pickem_home_spread": "home_spread"})
+                  [["league", "away", "home", "home_spread"]]
+                  .to_csv(out, index=False))
+            pdf.unlink()
+            item["csv"] = out.name
+            log.info("pool sheet %s -> %s (%d games, %d unparsed)", pdf.name, out.name, len(lines), len(unparsed))
+        else:
+            log.warning("pool sheet %s matched no games this week; left as is", pdf.name)
+        report.append(item)
+    return report
 
 
 def load(week_games: pd.DataFrame, path: Path | None = None, folder: Path | None = None

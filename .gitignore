@@ -20,6 +20,9 @@ data/interim/
 Thumbs.db
 .DS_Store
 
+# pool-sheet PDFs carry the member name; only the converted CSV is committed
+data/pickem/*.pdf
+
 # derived backtest predictions (regenerate with: python -m ats backtest)
 data/backtest/
 # data/rankings/ and data/results/ ARE committed: they are the append-only record.

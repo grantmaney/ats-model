@@ -145,3 +145,18 @@ def test_rowanspool_picksheet_layout():
     lines, unparsed = pickem.parse_rowanspool(text, WEEK)
     assert unparsed == []
     assert lines.set_index("game_id")["pickem_home_spread"].to_dict() == {"g1": -8.5, "g2": 1.5}
+
+
+def test_pdf_converted_to_csv_without_member_name(tmp_path, monkeypatch):
+    text = ["Report Name: Picksheet", "Member Name: SomeUser", "Season: 2026", "Week: Week 6",
+            "Kickoff Favorite Line Underdog",
+            "Sun 10/18/2026 1:25 PM PT", "KANSAS CITY (4-0) Las Vegas (0-5)", "8.5"]
+    monkeypatch.setattr(pickem, "pdf_lines", lambda p: text)
+    (tmp_path / "Print Preview.pdf").write_bytes(b"%PDF")
+    rep = pickem.convert_pdfs(WEEK, folder=tmp_path)
+    assert rep[0]["csv"] == "2026-week06-pool.csv"
+    assert not (tmp_path / "Print Preview.pdf").exists()
+    out = (tmp_path / "2026-week06-pool.csv").read_text()
+    assert "SomeUser" not in out
+    lines, info = pickem.load(WEEK, folder=tmp_path)
+    assert lines.set_index("game_id")["pickem_home_spread"].to_dict() == {"g1": -8.5}

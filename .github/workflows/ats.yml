@@ -94,6 +94,9 @@ jobs:
           for p in data/rankings data/results site/data; do
             if [ -e "$p" ]; then git add "$p"; fi
           done
+          # Uploaded pool-sheet PDFs are converted to CSV by the run; commit
+          # the CSV and the PDF's removal (-A stages deletions; PDFs are ignored).
+          git add -A data/pickem
           if git diff --cached --quiet; then
             echo "nothing to commit"
           else
