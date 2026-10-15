@@ -132,3 +132,16 @@ def test_everything_frozen_after_friday_deadline():
     assert out.loc["sun", "p_cover"] == 0.53 and out.loc["sun", "pick_side"] == "away"
     # never ranked before its lock -> no pick at all
     assert out.loc["new", "unranked"] and pd.isna(out.loc["new", "p_cover"]) and pd.isna(out.loc["new", "pick_side"])
+
+
+def test_rowanspool_picksheet_layout():
+    # Rows copied from the real Week 6 sheet: favorite first, home in caps,
+    # NFL line on the next line, college line at the end of the kickoff line.
+    text = ["Kickoff Favorite Line Underdog",
+            "Sun 10/18/2026 1:25 PM PT", "KANSAS CITY (4-0) Las Vegas (0-5)", "8.5",
+            "Sun 10/18/2026 5:20 PM PT", "Dallas (2-3) PHILADELPHIA (3-1-1)", "1.5",
+            "College Games", "Kickoff Favorite Spread Underdog"]
+    assert pickem.is_rowanspool(text)
+    lines, unparsed = pickem.parse_rowanspool(text, WEEK)
+    assert unparsed == []
+    assert lines.set_index("game_id")["pickem_home_spread"].to_dict() == {"g1": -8.5, "g2": 1.5}

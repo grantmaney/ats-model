@@ -18,8 +18,10 @@ import pandas as pd
 # Source name (normalized) -> canonical name, for cases the automatic
 # school+mascot keys miss. Add entries as `ats check` reports them.
 # nflverse's team list carries both LA and LAR for the Rams; schedules use LA.
-NFL_OVERRIDES: dict[str, str] = {"Los Angeles Rams": "LA"}
-CFB_OVERRIDES: dict[str, str] = {}
+# Short names used by the pool sheet and other sources.
+NFL_OVERRIDES: dict[str, str] = {"Los Angeles Rams": "LA", "LA Rams": "LA", "LA Chargers": "LAC",
+                                 "NY Jets": "NYJ", "NY Giants": "NYG"}
+CFB_OVERRIDES: dict[str, str] = {"Louisiana-Lafayette": "Louisiana", "Louisiana-Monroe": "UL Monroe"}
 
 
 def norm(name: str) -> str:

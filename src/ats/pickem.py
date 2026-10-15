@@ -4,11 +4,15 @@ to this week's games.
 Every sheet in the folder is tried; the one that matches the most of this
 week's games is used (so past weeks' sheets can stay). Formats:
 - CSV  (exact, recommended fallback): columns league,away,home,home_spread
-- PDF  ("ROWANSPOOL 2026 - Football Pickem"): best-effort text parser.
-  Heuristic until we've seen a real sheet: on each text line, the spread
-  number belongs to the team named immediately before it
-  ("Chiefs -3.5 Raiders" -> Chiefs -3.5). Home/away always come from the
-  schedule, never from the sheet. Unparsed lines are reported, not guessed.
+- PDF  ("ROWANSPOOL 2026 - Football Pickem" Picksheet print preview):
+  rows are "Favorite (W-L) Underdog (W-L)" with the favorite's spread as an
+  unsigned number, on the line after the matchup for NFL and at the end of
+  the kickoff line before it for college ("College Games" starts CFB).
+  Home teams are in capitals on the sheet, but home/away always come from
+  the schedule; the sign is set by whether the favorite is the home team.
+  Other PDFs fall back to a heuristic: the number belongs to the team named
+  immediately before it ("Chiefs -3.5 Raiders" -> Chiefs -3.5).
+  Unparsed rows are reported, not guessed.
 
 The pickem line is fixed once published; we record the file name and when it
 was committed to the repo as the line's source/timestamp. Until a sheet for
@@ -43,6 +47,48 @@ def pdf_lines(path: Path) -> list[str]:
         for page in pdf.pages:
             out += [ln.strip() for ln in (page.extract_text() or "").splitlines() if ln.strip()]
     return out
+
+
+REC = r"\(\d+-\d+(?:-\d+)?\)"
+MATCHUP = re.compile(rf"^(?:None\s+)?(?P<fav>.+?)\s+{REC}\s+(?P<dog>.+?)\s+{REC}$")
+KICKOFF = re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{1,2}/\d{1,2}/\d{4}\s+\d{1,2}:\d{2}\s*[AP]M\s+PT"
+                     r"(?:\s+(?P<num>\d{1,2}(?:\.\d)?))?$")
+BARE_NUM = re.compile(r"^\d{1,2}(?:\.\d)?$")
+
+
+def is_rowanspool(lines: list[str]) -> bool:
+    return any(ln.startswith("Kickoff Favorite") for ln in lines)
+
+
+def parse_rowanspool(lines: list[str], week_games: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """Picksheet layout (see module docstring). The line is the favorite's
+    spread, so home_spread = -line if the favorite is the home team."""
+    by_pair = {(r.league, frozenset((r.home, r.away))): r for r in week_games.itertuples()}
+    rows, unparsed = [], []
+    league, pending = "NFL", None
+    for i, ln in enumerate(lines):
+        if ln.startswith("College Games"):
+            league = "CFB"
+            continue
+        k = KICKOFF.match(ln)
+        if k:
+            pending = _num(k.group("num")) if k.group("num") else None
+            continue
+        m = MATCHUP.match(ln)
+        if not m:
+            continue
+        num = pending
+        if num is None and i + 1 < len(lines) and BARE_NUM.match(lines[i + 1]):
+            num = float(lines[i + 1])
+        pending = None
+        (fav, dog), _ = to_canonical(league, pd.Series([m["fav"], m["dog"]]), fuzzy=True)
+        g = by_pair.get((league, frozenset((fav, dog)))) if isinstance(fav, str) and isinstance(dog, str) else None
+        if g is None or num is None:
+            unparsed.append(f"{league}: {ln}" + ("" if num is not None else " (no line)"))
+            continue
+        rows.append({"league": league, "game_id": g.game_id, "home": g.home, "away": g.away,
+                     "pickem_home_spread": -num if fav == g.home else num, "raw": f"{ln} {num}"})
+    return pd.DataFrame(rows), unparsed
 
 
 def parse_lines(lines: list[str], week_games: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
@@ -131,7 +177,9 @@ def _load_one(path: Path, week_games: pd.DataFrame) -> tuple[pd.DataFrame, dict]
                                      on=["league", "home", "away"], how="inner")
         unparsed = []
     else:
-        lines, unparsed = parse_lines(pdf_lines(path), week_games)
+        text = pdf_lines(path)
+        parse = parse_rowanspool if is_rowanspool(text) else parse_lines
+        lines, unparsed = parse(text, week_games)
     if lines.empty:
         return EMPTY, info
     lines = lines.drop_duplicates("game_id", keep="first")
