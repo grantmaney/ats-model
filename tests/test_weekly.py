@@ -160,3 +160,14 @@ def test_pdf_converted_to_csv_without_member_name(tmp_path, monkeypatch):
     assert "SomeUser" not in out
     lines, info = pickem.load(WEEK, folder=tmp_path)
     assert lines.set_index("game_id")["pickem_home_spread"].to_dict() == {"g1": -8.5}
+
+
+def test_results_append_handles_new_column(tmp_path, monkeypatch):
+    f = tmp_path / "results.csv"
+    monkeypatch.setattr(weekly, "RESULTS", f)
+    weekly._append_results(pd.DataFrame([{"game_id": "a", "hit_live": 1.0}]))
+    weekly._append_results(pd.DataFrame([{"game_id": "b", "hit_live": 0.0, "line_pickem": 2.5}]))
+    weekly._append_results(pd.DataFrame([{"game_id": "c", "hit_live": 1.0}]))
+    r = pd.read_csv(f, dtype={"game_id": str})
+    assert r["game_id"].tolist() == ["a", "b", "c"]
+    assert r["line_pickem"].isna().tolist() == [True, False, True]

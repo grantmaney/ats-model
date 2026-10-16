@@ -344,9 +344,27 @@ def grade(now: datetime | None = None) -> pd.DataFrame:
                 rows.append(rec)
     new = pd.DataFrame(rows)
     if len(new):
-        RESULTS.parent.mkdir(parents=True, exist_ok=True)
-        new.to_csv(RESULTS, mode="a", header=not RESULTS.exists(), index=False)
+        _append_results(new)
     return new
+
+
+def _append_results(new: pd.DataFrame) -> None:
+    """Append rows under the file's existing header. Rows don't all carry the
+    same keys (line_pickem only exists for pool-sheet games), so a blind
+    append can add a column the header lacks and break the CSV. If a new
+    column appears, the file is rewritten with the wider header; existing
+    rows are kept as they are, with the new column blank."""
+    RESULTS.parent.mkdir(parents=True, exist_ok=True)
+    if not RESULTS.exists():
+        new.to_csv(RESULTS, index=False)
+        return
+    header = pd.read_csv(RESULTS, nrows=0).columns.tolist()
+    extra = [c for c in new.columns if c not in header]
+    if extra:
+        old = pd.read_csv(RESULTS, dtype={"game_id": str})
+        pd.concat([old, new[header + extra]], ignore_index=True).to_csv(RESULTS, index=False)
+    else:
+        new.reindex(columns=header).to_csv(RESULTS, mode="a", header=False, index=False)
 
 
 def season_record(season: int) -> dict:
