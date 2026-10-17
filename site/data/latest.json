@@ -1,7 +1,7 @@
 {
  "generated_at": "2026-10-16T21:51:14.038128+00:00",
  "kind": "refresh",
- "status": "open",
+ "status": "locked",
  "week_start": "2026-10-13",
  "submit_lock": "2026-10-17T05:00:00+00:00",
  "season": 2026,
@@ -24,7 +24,9 @@
   },
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
- "notes": [],
+ "notes": [
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-17 07:13 UTC."
+ ],
  "season_record": {
   "weeks": 1,
   "top5_graded": {
@@ -100,27 +102,27 @@
    "p_vs_50": 1.0
   },
   "all_graded": {
-   "n": 7.0,
-   "wins": 3.0,
-   "hit_rate": 0.42857142857142855,
-   "ci_lo": 0.15821692226262685,
-   "ci_hi": 0.7495457695909742,
+   "n": 10.0,
+   "wins": 5.0,
+   "hit_rate": 0.5,
+   "ci_lo": 0.23658959361548731,
+   "ci_hi": 0.7634104063845126,
    "p_vs_50": 1.0
   },
   "all_live": {
-   "n": 7.0,
-   "wins": 3.0,
-   "hit_rate": 0.42857142857142855,
-   "ci_lo": 0.15821692226262685,
-   "ci_hi": 0.7495457695909742,
+   "n": 10.0,
+   "wins": 5.0,
+   "hit_rate": 0.5,
+   "ci_lo": 0.23658959361548731,
+   "ci_hi": 0.7634104063845126,
    "p_vs_50": 1.0
   },
   "all_close": {
-   "n": 7.0,
-   "wins": 3.0,
-   "hit_rate": 0.42857142857142855,
-   "ci_lo": 0.15821692226262685,
-   "ci_hi": 0.7495457695909742,
+   "n": 10.0,
+   "wins": 5.0,
+   "hit_rate": 0.5,
+   "ci_lo": 0.23658959361548731,
+   "ci_hi": 0.7634104063845126,
    "p_vs_50": 1.0
   }
  },
@@ -852,7 +854,9 @@
    "confidence_basis": "backtest 50.0% (n=386) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 14.0
   },
   {
    "rank": 26,
@@ -910,7 +914,9 @@
    "confidence_basis": "backtest 50.0% (n=386) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -12.0
   },
   {
    "rank": 28,
@@ -1639,7 +1645,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -3.0
   },
   {
    "rank": 53,
@@ -2345,5 +2353,6 @@
    "locked": false,
    "unranked": false
   }
- ]
+ ],
+ "results_updated_at": "2026-10-17T07:13:05.350060+00:00"
 }
