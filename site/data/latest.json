@@ -25,105 +25,105 @@
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
  "notes": [
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-18 18:54 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-19 19:47 UTC."
  ],
  "season_record": {
   "weeks": 1,
   "top5_graded": {
-   "n": 3.0,
-   "wins": 2.0,
-   "hit_rate": 0.6666666666666666,
-   "ci_lo": 0.2076549551264879,
-   "ci_hi": 0.9385096847238394,
-   "p_vs_50": 1.0
+   "n": 5.0,
+   "wins": 4.0,
+   "hit_rate": 0.8,
+   "ci_lo": 0.3755282641185388,
+   "ci_hi": 0.9637768390302125,
+   "p_vs_50": 0.375
   },
   "top5_live": {
-   "n": 3.0,
-   "wins": 2.0,
-   "hit_rate": 0.6666666666666666,
-   "ci_lo": 0.2076549551264879,
-   "ci_hi": 0.9385096847238394,
-   "p_vs_50": 1.0
+   "n": 5.0,
+   "wins": 4.0,
+   "hit_rate": 0.8,
+   "ci_lo": 0.3755282641185388,
+   "ci_hi": 0.9637768390302125,
+   "p_vs_50": 0.375
   },
   "top5_close": {
-   "n": 3.0,
-   "wins": 2.0,
-   "hit_rate": 0.6666666666666666,
-   "ci_lo": 0.2076549551264879,
-   "ci_hi": 0.9385096847238394,
-   "p_vs_50": 1.0
+   "n": 5.0,
+   "wins": 4.0,
+   "hit_rate": 0.8,
+   "ci_lo": 0.3755282641185388,
+   "ci_hi": 0.9637768390302125,
+   "p_vs_50": 0.375
   },
   "top6_graded": {
-   "n": 3.0,
-   "wins": 2.0,
-   "hit_rate": 0.6666666666666666,
-   "ci_lo": 0.2076549551264879,
-   "ci_hi": 0.9385096847238394,
-   "p_vs_50": 1.0
+   "n": 5.0,
+   "wins": 4.0,
+   "hit_rate": 0.8,
+   "ci_lo": 0.3755282641185388,
+   "ci_hi": 0.9637768390302125,
+   "p_vs_50": 0.375
   },
   "top6_live": {
-   "n": 4.0,
-   "wins": 2.0,
-   "hit_rate": 0.5,
-   "ci_lo": 0.15003570882017148,
-   "ci_hi": 0.8499642911798285,
-   "p_vs_50": 1.0
+   "n": 6.0,
+   "wins": 4.0,
+   "hit_rate": 0.6666666666666666,
+   "ci_lo": 0.29998832134152864,
+   "ci_hi": 0.9032306674407831,
+   "p_vs_50": 0.6875
   },
   "top6_close": {
-   "n": 4.0,
-   "wins": 2.0,
-   "hit_rate": 0.5,
-   "ci_lo": 0.15003570882017148,
-   "ci_hi": 0.8499642911798285,
-   "p_vs_50": 1.0
+   "n": 6.0,
+   "wins": 4.0,
+   "hit_rate": 0.6666666666666666,
+   "ci_lo": 0.29998832134152864,
+   "ci_hi": 0.9032306674407831,
+   "p_vs_50": 0.6875
   },
   "top10_graded": {
-   "n": 9.0,
-   "wins": 5.0,
-   "hit_rate": 0.5555555555555556,
-   "ci_lo": 0.2666473457440297,
-   "ci_hi": 0.811224570528086,
-   "p_vs_50": 1.0
+   "n": 11.0,
+   "wins": 7.0,
+   "hit_rate": 0.6363636363636364,
+   "ci_lo": 0.35379677689163724,
+   "ci_hi": 0.8483377638586862,
+   "p_vs_50": 0.548828125
   },
   "top10_live": {
-   "n": 10.0,
-   "wins": 5.0,
-   "hit_rate": 0.5,
-   "ci_lo": 0.23658959361548731,
-   "ci_hi": 0.7634104063845126,
-   "p_vs_50": 1.0
+   "n": 12.0,
+   "wins": 7.0,
+   "hit_rate": 0.5833333333333334,
+   "ci_lo": 0.3195073356553728,
+   "ci_hi": 0.8067425380947535,
+   "p_vs_50": 0.7744140625
   },
   "top10_close": {
-   "n": 10.0,
-   "wins": 5.0,
-   "hit_rate": 0.5,
-   "ci_lo": 0.23658959361548731,
-   "ci_hi": 0.7634104063845126,
-   "p_vs_50": 1.0
+   "n": 12.0,
+   "wins": 7.0,
+   "hit_rate": 0.5833333333333334,
+   "ci_lo": 0.3195073356553728,
+   "ci_hi": 0.8067425380947535,
+   "p_vs_50": 0.7744140625
   },
   "all_graded": {
-   "n": 58.0,
-   "wins": 27.0,
-   "hit_rate": 0.46551724137931033,
-   "ci_lo": 0.34331815357826717,
-   "ci_hi": 0.5920004668972703,
-   "p_vs_50": 0.6940040940761318
+   "n": 69.0,
+   "wins": 31.0,
+   "hit_rate": 0.4492753623188406,
+   "ci_lo": 0.3376866594343888,
+   "ci_hi": 0.5662144080874668,
+   "p_vs_50": 0.47036853185814453
   },
   "all_live": {
-   "n": 58.0,
-   "wins": 26.0,
-   "hit_rate": 0.4482758620689655,
-   "ci_lo": 0.32749651292941145,
-   "ci_hi": 0.5754814177838947,
-   "p_vs_50": 0.5118423084381691
+   "n": 69.0,
+   "wins": 30.0,
+   "hit_rate": 0.43478260869565216,
+   "ci_lo": 0.32432616178765283,
+   "ci_hi": 0.5521180678833044,
+   "p_vs_50": 0.3355576182340152
   },
   "all_close": {
-   "n": 59.0,
-   "wins": 26.0,
-   "hit_rate": 0.4406779661016949,
-   "ci_lo": 0.3215001223396273,
-   "ci_hi": 0.5671086972957734,
-   "p_vs_50": 0.43499280512215344
+   "n": 70.0,
+   "wins": 30.0,
+   "hit_rate": 0.42857142857142855,
+   "ci_lo": 0.31935124886212546,
+   "ci_hi": 0.5452237332617722,
+   "p_vs_50": 0.281978921793656
   }
  },
  "games": [
@@ -154,7 +154,9 @@
    "confidence_basis": "backtest 61.6% (n=837) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -11.0
   },
   {
    "rank": 2,
@@ -183,7 +185,9 @@
    "confidence_basis": "backtest 61.6% (n=837) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 3.0
   },
   {
    "rank": 3,
@@ -460,7 +464,9 @@
    "confidence_basis": "backtest 49.6% (n=274) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 16.0
   },
   {
    "rank": 12,
@@ -582,7 +588,9 @@
    "confidence_basis": "backtest 49.6% (n=274) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -3.0
   },
   {
    "rank": 16,
@@ -2099,7 +2107,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 7.0
   },
   {
    "rank": 65,
@@ -2128,7 +2138,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -8.0
   },
   {
    "rank": 66,
@@ -2157,7 +2169,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -6.0
   },
   {
    "rank": 67,
@@ -2217,7 +2231,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -7.0
   },
   {
    "rank": 69,
@@ -2246,7 +2262,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -7.0
   },
   {
    "rank": 70,
@@ -2275,7 +2293,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -2.0
   },
   {
    "rank": 71,
@@ -2304,7 +2324,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 10.0
   },
   {
    "rank": 72,
@@ -2454,5 +2476,5 @@
    "unranked": false
   }
  ],
- "results_updated_at": "2026-10-18T18:54:02.906248+00:00"
+ "results_updated_at": "2026-10-19T19:47:37.718753+00:00"
 }
