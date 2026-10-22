@@ -6,8 +6,8 @@ week's games is used (so past weeks' sheets can stay). Formats:
 - CSV  (exact, recommended fallback): columns league,away,home,home_spread
 - PDF  ("ROWANSPOOL 2026 - Football Pickem" Picksheet print preview):
   rows are "Favorite (W-L) Underdog (W-L)" with the favorite's spread as an
-  unsigned number, on the line after the matchup for NFL and at the end of
-  the kickoff line before it for college ("College Games" starts CFB).
+  unsigned number: between the two teams, on the line after the matchup, or
+  at the end of the kickoff line before it (layouts seen so far) ("College Games" starts CFB).
   Home teams are in capitals on the sheet, but home/away always come from
   the schedule; the sign is set by whether the favorite is the home team.
   Other PDFs fall back to a heuristic: the number belongs to the team named
@@ -55,7 +55,8 @@ def pdf_lines(path: Path) -> list[str]:
 
 
 REC = r"\(\d+-\d+(?:-\d+)?\)"
-MATCHUP = re.compile(rf"^(?:None\s+)?(?P<fav>.+?)\s+{REC}\s+(?P<dog>.+?)\s+{REC}$")
+MATCHUP = re.compile(rf"^(?:None\s+)?(?P<fav>.+?)\s+{REC}\s+(?:(?P<mid>\d{{1,2}}(?:\.\d)?)\s+)?"
+                     rf"(?P<dog>.+?)\s+{REC}$")
 KICKOFF = re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{1,2}/\d{1,2}/\d{4}\s+\d{1,2}:\d{2}\s*[AP]M\s+PT"
                      r"(?:\s+(?P<num>\d{1,2}(?:\.\d)?))?$")
 BARE_NUM = re.compile(r"^\d{1,2}(?:\.\d)?$")
@@ -82,7 +83,7 @@ def parse_rowanspool(lines: list[str], week_games: pd.DataFrame) -> tuple[pd.Dat
         m = MATCHUP.match(ln)
         if not m:
             continue
-        num = pending
+        num = float(m["mid"]) if m["mid"] else pending  # line between the teams (some weeks)
         if num is None and i + 1 < len(lines) and BARE_NUM.match(lines[i + 1]):
             num = float(lines[i + 1])
         pending = None

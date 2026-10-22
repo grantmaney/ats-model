@@ -171,3 +171,10 @@ def test_results_append_handles_new_column(tmp_path, monkeypatch):
     r = pd.read_csv(f, dtype={"game_id": str})
     assert r["game_id"].tolist() == ["a", "b", "c"]
     assert r["line_pickem"].isna().tolist() == [True, False, True]
+
+
+def test_rowanspool_line_between_teams():
+    text = ["Kickoff Favorite Line Underdog", "Sun 10/25/2026 10:00 AM PT",
+            "KANSAS CITY (5-0) 3.0 Las Vegas (3-3)"]
+    lines, unparsed = pickem.parse_rowanspool(text, WEEK)
+    assert unparsed == [] and lines["pickem_home_spread"].tolist() == [-3.0]
