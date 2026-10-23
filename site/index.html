@@ -49,6 +49,8 @@
   .controls { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
   .controls button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--rule);
     background: var(--surface); color: var(--ink-2); cursor: pointer; }
+  .controls select { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--rule);
+    background: var(--surface); color: var(--ink); }
   .controls button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 13px; }
 </style>
@@ -56,6 +58,11 @@
 <body>
 <main>
   <h1>Weekly ATS cover-probability ranking</h1>
+  <div class="controls" id="tabs">
+    <button data-v="current" aria-pressed="true">This week</button>
+    <button data-v="past" aria-pressed="false">Past weeks</button>
+    <select id="weeksel" hidden aria-label="Week"></select>
+  </div>
   <p class="sub" id="sub">Loading…</p>
   <div class="status" id="status"></div>
   <div class="notes" id="notes"></div>
@@ -64,7 +71,7 @@
   <div class="tiles" id="tiles"></div>
   <p class="muted">Records use the submitted list (locked Friday 10pm PT, or at kickoff for earlier games). Break-even at -110 is 52.4%; a 95% interval that includes 50% means the record is not distinguishable from a coin flip.</p>
 
-  <h2>This week</h2>
+  <h2 id="listTitle">This week</h2>
   <div class="controls" id="controls">
     <button data-f="all" aria-pressed="true">All</button>
     <button data-f="NFL" aria-pressed="false">NFL</button>
@@ -88,7 +95,9 @@
 const fmtLine = x => x == null ? "—" : (x === 0 ? "PK" : (x > 0 ? "+" : "") + x.toFixed(1));
 const pct = x => x == null ? "—" : (100 * x).toFixed(1) + "%";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let DATA = null, FILTER = "all";
+let LATEST = null, FILTER = "all", VIEW = "current", WEEKS = [], WEEK = null;
+const CACHE = {};
+const rec = r => !r ? "—" : `${r.wins}-${r.losses}${r.pushes ? "-" + r.pushes : ""}` + (r.pending ? ` (${r.pending} pending)` : "");
 try { FILTER = localStorage.getItem("ats-filter") || "all"; } catch (e) {}
 
 function tile(label, rec) {
@@ -99,21 +108,34 @@ function tile(label, rec) {
 }
 
 function render() {
-  const d = DATA;
-  document.getElementById("sub").textContent =
-    `Week of ${d.week_start} · ${d.kind === "weekly" ? "Tuesday headline" : "daily refresh"} · generated ${new Date(d.generated_at).toLocaleString()}`;
-  const notes = [...(d.notes || [])];
+  const past = VIEW === "past";
+  const d = past ? CACHE[WEEK] : LATEST;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === VIEW));
+  document.getElementById("weeksel").hidden = !past;
+  document.getElementById("listTitle").textContent = past ? "Submitted list and results" : "This week";
+  if (!d) {
+    document.getElementById("sub").textContent = past ? (WEEKS.length ? "Loading…" : "No finished weeks yet.") : "Loading…";
+    document.getElementById("rows").innerHTML = ""; document.getElementById("status").textContent = "";
+    document.getElementById("notes").innerHTML = "";
+    return;
+  }
+  document.getElementById("sub").textContent = past
+    ? `Week of ${d.week_start} · list as submitted (last update before the Friday deadline, ${new Date(d.generated_at).toLocaleString()})`
+    : `Week of ${d.week_start} · ${d.kind === "weekly" ? "Tuesday headline" : "daily refresh"} · generated ${new Date(d.generated_at).toLocaleString()}`;
+  const notes = past ? [] : [...(d.notes || [])];
   const pk = d.sources?.pickem;
   if (pk?.file) notes.push(`Pickem sheet: ${pk.file} (${pk.matched} games matched).`);
   document.getElementById("notes").innerHTML = notes.map(esc).join("<br>");
-  const r = d.season_record || {};
+  const r = (LATEST && LATEST.season_record) || {};
   document.getElementById("tiles").innerHTML =
     tile("Top 6", r.top6_graded) + tile("Top 10", r.top10_graded) +
     tile("All picks", r.all_graded);
   const st = document.getElementById("status");
   const lockAt = d.submit_lock ? new Date(d.submit_lock) : null;
   const lockTxt = lockAt ? lockAt.toLocaleString([], {weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) : "";
-  if (d.status === "locked") { st.className = "status locked"; st.textContent = `Picks locked (deadline ${lockTxt}). Results fill in as games finish.`; }
+  if (past) { const w = d.week_record || {}; st.className = "status locked";
+    st.textContent = `Week result (graded vs the pool sheet line): Top 6 ${rec(w.top6)} · Top 10 ${rec(w.top10)} · All picks ${rec(w.all)}`; }
+  else if (d.status === "locked") { st.className = "status locked"; st.textContent = `Picks locked (deadline ${lockTxt}). Results fill in as games finish.`; }
   else { st.className = "status"; st.textContent = lockAt ? `Open: list refreshes until the submission deadline, ${lockTxt}.` : ""; }
   const games = (d.games || []).filter(g => FILTER === "all" || g.league === FILTER);
   // Line columns are shown from the picked team's side (home side if no pick).
@@ -145,8 +167,28 @@ document.getElementById("controls").addEventListener("click", e => {
   render();
 });
 
+function showWeek(w) {
+  WEEK = w;
+  if (CACHE[w]) return render();
+  render();
+  fetch(`data/weeks/${w}.json`, {cache: "no-store"}).then(r => r.json())
+    .then(d => { CACHE[w] = d; if (WEEK === w) render(); });
+}
+
+document.getElementById("tabs").addEventListener("click", e => {
+  const v = e.target.dataset?.v; if (!v) return;
+  VIEW = v;
+  if (v === "past" && WEEKS.length) showWeek(WEEK || WEEKS[0]); else render();
+});
+document.getElementById("weeksel").addEventListener("change", e => showWeek(e.target.value));
+
+fetch("data/weeks/index.json", {cache: "no-store"}).then(r => r.json()).then(ws => {
+  WEEKS = ws;
+  document.getElementById("weeksel").innerHTML = ws.map(w => `<option value="${esc(w)}">Week of ${esc(w)}</option>`).join("");
+}).catch(() => {});
+
 fetch("data/latest.json", {cache: "no-store"})
-  .then(r => r.json()).then(d => { DATA = d; render(); })
+  .then(r => r.json()).then(d => { LATEST = d; render(); })
   .catch(() => { document.getElementById("sub").textContent = "No ranking published yet."; });
 </script>
 </body>

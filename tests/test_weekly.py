@@ -178,3 +178,17 @@ def test_rowanspool_line_between_teams():
             "KANSAS CITY (5-0) 3.0 Las Vegas (3-3)"]
     lines, unparsed = pickem.parse_rowanspool(text, WEEK)
     assert unparsed == [] and lines["pickem_home_spread"].tolist() == [-3.0]
+
+
+def test_week_old_lookahead_line_is_not_live(monkeypatch):
+    from ats.loaders import odds
+    now = pd.Timestamp("2026-10-22T22:00Z")
+    snap = pd.DataFrame({"home": ["KC", "PHI"], "away": ["LV", "DAL"],
+                         "commence_time": pd.to_datetime(["2026-10-25T17:00Z"] * 2),
+                         "home_spread": [-3.0, -1.5],
+                         "fetched_at": pd.to_datetime(["2026-10-22T21:00Z", "2026-10-15T17:00Z"]),
+                         "book_last_update": pd.to_datetime(["2026-10-22T21:00Z", "2026-10-15T17:00Z"])})
+    monkeypatch.setattr(odds, "latest_lines", lambda lg, as_of=None: snap)
+    games = WEEK.assign(football_week_start=pd.Timestamp("2026-10-20"))
+    got = weekly.live_lines("NFL", games, now).set_index("game_id")["live_home_spread"].to_dict()
+    assert got == {"g1": -3.0}  # PHI's week-old line is dropped

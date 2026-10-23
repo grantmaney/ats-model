@@ -58,11 +58,19 @@ def refresh_data(season: int, snapshot_odds: bool = True) -> dict:
     return info
 
 
+MAX_LINE_AGE = pd.Timedelta(hours=36)
+
+
 def live_lines(league: str, games: pd.DataFrame, as_of: datetime) -> pd.DataFrame:
     """Latest DraftKings home spread per game as of `as_of`, matched to games
-    (home/away swapped matches have their sign flipped)."""
+    (home/away swapped matches have their sign flipped). Lines fetched more
+    than MAX_LINE_AGE before `as_of` are dropped: DraftKings posts next week's
+    games early, and a week-old look-ahead line is not a live line (the game
+    is then flagged "no live DK line")."""
     from .loaders import odds
     s = odds.latest_lines(league, as_of=as_of)
+    if not s.empty:
+        s = s[pd.to_datetime(s["fetched_at"], utc=True) >= pd.Timestamp(as_of) - MAX_LINE_AGE]
     if s.empty:
         return pd.DataFrame(columns=["game_id", "live_home_spread", "live_fetched_at", "live_book_update"])
     s = s.assign(football_week_start=pd.to_datetime(football_week_start_series(s["commence_time"])))
@@ -367,18 +375,40 @@ def _append_results(new: pd.DataFrame) -> None:
         new.reindex(columns=header).to_csv(RESULTS, mode="a", header=False, index=False)
 
 
-def season_record(season: int) -> dict:
-    """Season-to-date records of the submitted (Friday-locked) list."""
-    if not RESULTS.exists():
-        return {}
-    r = pd.read_csv(RESULTS, dtype={"game_id": str})
-    r = r[(r["version"] == "submitted") & (pd.to_datetime(r["week_start"]).map(lambda d: d.year if d.month >= 8 else d.year - 1) == season)]
-    out = {"weeks": int(r["week_start"].nunique())}
-    for label, n in (("top5", 5), ("top6", 6), ("top10", 10), ("all", None)):
-        x = r if n is None else r[r["rank"] <= n]
-        for col in ("hit_graded", "hit_live", "hit_close"):
-            s = M.hit_summary(x[col])
-            out[f"{label}_{col.replace('hit_', '')}"] = {k: (None if pd.isna(v) else float(v)) for k, v in s.items()}
+def pool_list(games: list[dict]) -> list[dict]:
+    """The picks that count for a week: when a pool sheet exists, only games
+    on the sheet (others, e.g. midweek games locked before it arrived, were
+    never submitted), renumbered in the published order."""
+    ranked = sorted((g for g in games if g.get("rank") is not None), key=lambda g: g["rank"])
+    if any(g.get("pickem_home_spread") is not None for g in ranked):
+        ranked = [g for g in ranked if g.get("pickem_home_spread") is not None]
+    return [{**g, "rank": i + 1} for i, g in enumerate(ranked)]
+
+
+def _hits(games: list[dict], n: int | None) -> pd.Series:
+    g = games if n is None else games[:n]
+    return pd.Series([1.0 if x.get("result") == "hit" else 0.0 for x in g if x.get("result") in ("hit", "miss")],
+                     dtype=float)
+
+
+def season_record(season: int, current: dict | None = None) -> dict:
+    """Season-to-date record of the submitted lists (as on the page): every
+    finished week's file plus `current` (this week's payload with results).
+    Pushes and unplayed games don't count."""
+    weeks = {}
+    wdir = SITE_DATA / "weeks"
+    for f in sorted(wdir.glob("*.json")) if wdir.exists() else []:
+        if f.name == "index.json":
+            continue
+        p = json.loads(f.read_text(encoding="utf-8"))
+        if p.get("season") == season:
+            weeks[p["week_start"]] = pool_list(p["games"])
+    if current is not None and current.get("season") == season and current.get("games"):
+        weeks[current["week_start"]] = pool_list(current["games"])
+    out = {"weeks": len(weeks)}
+    for label, n in (("top6", 6), ("top10", 10), ("all", None)):
+        h = pd.concat([_hits(g, n) for g in weeks.values()]) if weeks else pd.Series(dtype=float)
+        out[f"{label}_graded"] = {k: (None if pd.isna(v) else float(v)) for k, v in M.hit_summary(h).items()}
     return out
 
 
@@ -393,6 +423,8 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
     # Always pull fresh results first, then grade anything newly finished.
     odds_info = refresh_data(season, snapshot_odds=not frozen) if fetch else {}
     graded = grade(now)
+    # Lines snapshotted just now must count: `now` was taken before the fetch.
+    lines_as_of = datetime.now(timezone.utc) if fetch else now
     log.info("graded %d new entries", len(graded))
     if frozen:
         return publish_locked(week_start, season, now)
@@ -422,12 +454,12 @@ def run(kind: str = "weekly", now: datetime | None = None, fetch: bool = True) -
                      f"{len(pick_info['unparsed'])} lines could not be matched (see sources.pickem.unparsed).")
 
     for lg in ("NFL", "CFB"):
-        cur, past = predict_league(lg, week_start, now)
+        cur, past = predict_league(lg, week_start, lines_as_of)
         if cur.empty:
             notes.append(f"{lg}: no modeled games for week of {week_start.date()}.")
         else:
             tables.append(build_table(lg, cur, past, pick_lines, now))
-        tables.append(_unmodeled(lg, week_start, now, set(cur["game_id"]), pick_lines))
+        tables.append(_unmodeled(lg, week_start, lines_as_of, set(cur["game_id"]), pick_lines))
     table = pd.concat(tables, ignore_index=True) if tables else pd.DataFrame()
     prior = previous_rankings(week_start)
     if not table.empty:
@@ -499,6 +531,44 @@ def publish_locked(week_start, season: int, now: datetime) -> dict:
 
 def _publish_site(payload: dict) -> None:
     SITE_DATA.mkdir(parents=True, exist_ok=True)
+    publish_past_weeks(payload["week_start"])
+    payload["season_record"] = season_record(payload["season"], payload)
     (SITE_DATA / "latest.json").write_text(json.dumps(payload, indent=1, default=str), encoding="utf-8")
     if RESULTS.exists():
         pd.read_csv(RESULTS).to_json(SITE_DATA / "results.json", orient="records", indent=1)
+
+
+def week_record(games: list[dict]) -> dict:
+    """Top-6 / top-10 / all record for one week's submitted list."""
+    out = {}
+    for key, n in (("top6", 6), ("top10", 10), ("all", None)):
+        g = [x for x in games if x.get("rank") is not None and (n is None or x["rank"] <= n)]
+        w = sum(x.get("result") == "hit" for x in g)
+        l = sum(x.get("result") == "miss" for x in g)
+        p = sum(x.get("result") == "push" for x in g)
+        out[key] = {"wins": w, "losses": l, "pushes": p, "pending": len(g) - w - l - p}
+    return out
+
+
+def publish_past_weeks(current_week: str) -> list[str]:
+    """site/data/weeks/<week>.json for every finished week: the submitted list
+    (last ranking before the Friday deadline) with results, plus index.json."""
+    out_dir = SITE_DATA / "weeks"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    weeks = []
+    for d in sorted(RANKINGS.glob("*"), reverse=True):
+        if not d.is_dir() or d.name >= current_week:
+            continue
+        subs = [rk for rk in previous_rankings(d.name)
+                if pd.Timestamp(rk["generated_at"]) < submit_lock(d.name)]
+        if not subs:
+            continue
+        p = attach_results(dict(subs[-1]))
+        p["status"] = "final"
+        p["notes"] = []
+        p["games"] = pool_list(p["games"])
+        p["week_record"] = week_record(p["games"])
+        (out_dir / f"{d.name}.json").write_text(json.dumps(p, indent=1, default=str), encoding="utf-8")
+        weeks.append(d.name)
+    (out_dir / "index.json").write_text(json.dumps(weeks), encoding="utf-8")
+    return weeks
