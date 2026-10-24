@@ -1,7 +1,7 @@
 {
  "generated_at": "2026-10-23T20:04:45.880572+00:00",
  "kind": "refresh",
- "status": "open",
+ "status": "locked",
  "week_start": "2026-10-20",
  "submit_lock": "2026-10-24T05:00:00+00:00",
  "season": 2026,
@@ -24,32 +24,34 @@
   },
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
- "notes": [],
+ "notes": [
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-24 07:37 UTC."
+ ],
  "season_record": {
   "weeks": 2,
   "top6_graded": {
-   "n": 6.0,
+   "n": 7.0,
    "wins": 4.0,
-   "hit_rate": 0.6666666666666666,
-   "ci_lo": 0.29998832134152864,
-   "ci_hi": 0.9032306674407831,
-   "p_vs_50": 0.6875
+   "hit_rate": 0.5714285714285714,
+   "ci_lo": 0.2504542304090258,
+   "ci_hi": 0.8417830777373732,
+   "p_vs_50": 1.0
   },
   "top10_graded": {
-   "n": 10.0,
+   "n": 11.0,
    "wins": 6.0,
-   "hit_rate": 0.6,
-   "ci_lo": 0.3126695474501864,
-   "ci_hi": 0.8318224187964902,
-   "p_vs_50": 0.75390625
+   "hit_rate": 0.5454545454545454,
+   "ci_lo": 0.28008775568998817,
+   "ci_hi": 0.7872904245601196,
+   "p_vs_50": 1.0
   },
   "all_graded": {
-   "n": 71.0,
-   "wins": 30.0,
-   "hit_rate": 0.4225352112676056,
-   "ci_lo": 0.3145283047701463,
-   "ci_hi": 0.5384946129654448,
-   "p_vs_50": 0.23509756240834187
+   "n": 76.0,
+   "wins": 31.0,
+   "hit_rate": 0.40789473684210525,
+   "ci_lo": 0.3044362924110896,
+   "ci_hi": 0.5202165201577967,
+   "p_vs_50": 0.13538510529943087
   }
  },
  "games": [
@@ -140,7 +142,9 @@
    "confidence_basis": "backtest 53.1% (n=375) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 19.0
   },
   {
    "rank": 4,
@@ -430,7 +434,9 @@
    "confidence_basis": "backtest 49.6% (n=274) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 3.0
   },
   {
    "rank": 14,
@@ -548,7 +554,9 @@
    "confidence_basis": "backtest 49.6% (n=274) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -3.0
   },
   {
    "rank": 18,
@@ -1602,7 +1610,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -3.0
   },
   {
    "rank": 54,
@@ -1660,7 +1670,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 14.0
   },
   {
    "rank": 56,
@@ -2099,5 +2111,6 @@
    "locked": false,
    "unranked": false
   }
- ]
+ ],
+ "results_updated_at": "2026-10-24T07:37:11.834035+00:00"
 }
