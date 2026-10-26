@@ -25,33 +25,33 @@
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
  "notes": [
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-25 19:14 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-26 19:51 UTC."
  ],
  "season_record": {
   "weeks": 2,
   "top6_graded": {
-   "n": 9.0,
-   "wins": 5.0,
-   "hit_rate": 0.5555555555555556,
-   "ci_lo": 0.2666473457440297,
-   "ci_hi": 0.811224570528086,
+   "n": 11.0,
+   "wins": 6.0,
+   "hit_rate": 0.5454545454545454,
+   "ci_lo": 0.28008775568998817,
+   "ci_hi": 0.7872904245601196,
    "p_vs_50": 1.0
   },
   "top10_graded": {
-   "n": 17.0,
-   "wins": 8.0,
-   "hit_rate": 0.47058823529411764,
-   "ci_lo": 0.26164801196088106,
-   "ci_hi": 0.6903710268845051,
+   "n": 19.0,
+   "wins": 9.0,
+   "hit_rate": 0.47368421052631576,
+   "ci_lo": 0.27329505487448547,
+   "ci_hi": 0.6829251748817489,
    "p_vs_50": 1.0
   },
   "all_graded": {
-   "n": 120.0,
-   "wins": 53.0,
-   "hit_rate": 0.44166666666666665,
-   "ci_lo": 0.3559959731595542,
-   "ci_hi": 0.530956391796971,
-   "p_vs_50": 0.2352033679725253
+   "n": 130.0,
+   "wins": 56.0,
+   "hit_rate": 0.4307692307692308,
+   "ci_lo": 0.348839550245185,
+   "ci_hi": 0.516673115473097,
+   "p_vs_50": 0.1356555651520017
   }
  },
  "games": [
@@ -175,7 +175,9 @@
    "confidence_basis": "backtest 53.1% (n=375) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 17.0
   },
   {
    "rank": 5,
@@ -235,7 +237,9 @@
    "confidence_basis": "backtest 53.1% (n=375) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -22.0
   },
   {
    "rank": 7,
@@ -388,7 +392,9 @@
    "confidence_basis": "backtest 53.1% (n=375) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -3.0
   },
   {
    "rank": 12,
@@ -1967,7 +1973,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -3.0
   },
   {
    "rank": 63,
@@ -1996,7 +2004,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 6.0
   },
   {
    "rank": 64,
@@ -2025,7 +2035,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -30.0
   },
   {
    "rank": 65,
@@ -2054,7 +2066,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 9.0
   },
   {
    "rank": 66,
@@ -2083,7 +2097,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -6.0
   },
   {
    "rank": 67,
@@ -2112,7 +2128,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "push",
+   "final_margin_home": 3.0
   },
   {
    "rank": 68,
@@ -2141,7 +2159,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -14.0
   },
   {
    "rank": 69,
@@ -2199,8 +2219,10 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -14.0
   }
  ],
- "results_updated_at": "2026-10-25T19:14:57.769984+00:00"
+ "results_updated_at": "2026-10-26T19:51:42.724343+00:00"
 }
