@@ -55,7 +55,7 @@ def pdf_lines(path: Path) -> list[str]:
 
 
 REC = r"\(\d+-\d+(?:-\d+)?\)"
-MATCHUP = re.compile(rf"^(?:None\s+)?(?P<fav>.+?)\s+{REC}\s+(?:(?P<mid>\d{{1,2}}(?:\.\d)?)\s+)?"
+MATCHUP = re.compile(rf"^(?:(?:None|Game Started)\s+)?(?P<fav>.+?)\s+{REC}\s+(?:(?P<mid>\d{{1,2}}(?:\.\d)?)\s+)?"
                      rf"(?P<dog>.+?)\s+{REC}$")
 KICKOFF = re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{1,2}/\d{1,2}/\d{4}\s+\d{1,2}:\d{2}\s*[AP]M\s+PT"
                      r"(?:\s+(?P<num>\d{1,2}(?:\.\d)?))?$")
