@@ -1,7 +1,7 @@
 {
  "generated_at": "2026-10-30T21:02:00.227243+00:00",
  "kind": "refresh",
- "status": "open",
+ "status": "locked",
  "week_start": "2026-10-27",
  "submit_lock": "2026-10-31T05:00:00+00:00",
  "season": 2026,
@@ -24,32 +24,34 @@
   },
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
- "notes": [],
+ "notes": [
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-10-31 08:55 UTC."
+ ],
  "season_record": {
   "weeks": 3,
   "top6_graded": {
-   "n": 11.0,
-   "wins": 6.0,
-   "hit_rate": 0.5454545454545454,
-   "ci_lo": 0.28008775568998817,
-   "ci_hi": 0.7872904245601196,
-   "p_vs_50": 1.0
+   "n": 13.0,
+   "wins": 8.0,
+   "hit_rate": 0.6153846153846154,
+   "ci_lo": 0.35522480972268555,
+   "ci_hi": 0.8229055341876319,
+   "p_vs_50": 0.5810546875
   },
   "top10_graded": {
-   "n": 19.0,
-   "wins": 9.0,
-   "hit_rate": 0.47368421052631576,
-   "ci_lo": 0.27329505487448547,
-   "ci_hi": 0.6829251748817489,
+   "n": 21.0,
+   "wins": 11.0,
+   "hit_rate": 0.5238095238095238,
+   "ci_lo": 0.32369217900266756,
+   "ci_hi": 0.7165628770323705,
    "p_vs_50": 1.0
   },
   "all_graded": {
-   "n": 131.0,
-   "wins": 56.0,
-   "hit_rate": 0.42748091603053434,
-   "ci_lo": 0.34601929472299015,
-   "ci_hi": 0.513074634746847,
-   "p_vs_50": 0.11545448829225959
+   "n": 134.0,
+   "wins": 58.0,
+   "hit_rate": 0.43283582089552236,
+   "ci_lo": 0.3519719367608789,
+   "ci_hi": 0.5174433921383794,
+   "p_vs_50": 0.14166174981277432
   }
  },
  "games": [
@@ -80,7 +82,9 @@
    "confidence_basis": "backtest 61.6% (n=837) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -32.0
   },
   {
    "rank": 2,
@@ -196,7 +200,9 @@
    "confidence_basis": "backtest 53.1% (n=375) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 21.0
   },
   {
    "rank": 6,
@@ -1304,7 +1310,9 @@
    "confidence_basis": "backtest 52.3% (n=618) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -7.0
   },
   {
    "rank": 44,
@@ -2097,5 +2105,6 @@
    "locked": false,
    "unranked": false
   }
- ]
+ ],
+ "results_updated_at": "2026-10-31T08:55:04.277897+00:00"
 }
