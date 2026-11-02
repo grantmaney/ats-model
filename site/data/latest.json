@@ -25,7 +25,7 @@
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
  "notes": [
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-02 22:42 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-02 23:40 UTC."
  ],
  "season_record": {
   "weeks": 3,
@@ -2224,5 +2224,5 @@
    "final_margin_home": 26.0
   }
  ],
- "results_updated_at": "2026-11-02T22:42:28.055866+00:00"
+ "results_updated_at": "2026-11-02T23:40:54.724626+00:00"
 }
