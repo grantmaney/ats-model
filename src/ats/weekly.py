@@ -125,6 +125,39 @@ def confidence(edge: float, table: pd.DataFrame | None) -> tuple[str, str]:
     return "Low", "edge outside backtested range"
 
 
+QB_FLAG_STATUS = ("Questionable", "Doubtful", "Out")
+
+
+def qb_injury_flags(cur: pd.DataFrame) -> dict:
+    """game_id -> "QB <name> (<team>) <status>" when the QB who started a
+    team's last game is listed Questionable/Doubtful/Out on this week's
+    official report. Display only: the market already prices the report,
+    but a pick on such a game can swing after the Friday lock."""
+    from .config import RAW
+    from .model import data
+    if cur.empty:
+        return {}
+    season, week = int(cur["season"].iloc[0]), int(cur["week"].iloc[0])
+    p = RAW / "nflverse" / f"injuries_{season}.parquet"
+    if not p.exists():
+        return {}
+    inj = pd.read_parquet(p, columns=["week", "team", "gsis_id", "full_name", "position", "report_status"])
+    inj = inj[(inj["week"] == week) & inj["report_status"].isin(QB_FLAG_STATUS)]
+    g = data.games("NFL")
+    g = g[(g["season"] == season) & (g["kickoff_utc"] < cur["kickoff_utc"].min())].sort_values("kickoff_utc")
+    starts = pd.concat([g[["kickoff_utc", "home", "home_qb_id"]].set_axis(["k", "team", "qb"], axis=1),
+                        g[["kickoff_utc", "away", "away_qb_id"]].set_axis(["k", "team", "qb"], axis=1)])
+    last_qb = starts.dropna(subset=["qb"]).sort_values("k").groupby("team")["qb"].last()
+    hurt = inj.set_index("gsis_id")
+    out = {}
+    for r in cur.itertuples():
+        msgs = [f"QB {hurt.at[last_qb[t], 'full_name']} ({t}) {hurt.at[last_qb[t], 'report_status']}"
+                for t in (r.away, r.home) if t in last_qb.index and last_qb[t] in hurt.index]
+        if msgs:
+            out[r.game_id] = "; ".join(msgs) + " on injury report"
+    return out
+
+
 def _fmt_line(x: float) -> str:
     if x is None or (isinstance(x, float) and np.isnan(x)):
         return ""
@@ -170,6 +203,7 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
     cur["p_pick"] = np.where(cur["pick_home"], cur["p_home"], 1 - cur["p_home"])
     cur["edge"] = cur["p_pick"] - 0.5
     ctab, stab = _confidence_table(league), _confidence_table("stale")
+    qbf = qb_injury_flags(cur) if league == "NFL" else {}
     rows = []
     for _, r in cur.iterrows():
         sgn = 1 if r["pick_home"] else -1
@@ -183,7 +217,13 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
             flags.append("no model prediction")
         if r.get("calibrated", 1) == 0:
             flags.append("uncalibrated")
+        if r["game_id"] in qbf:
+            flags.append(qbf[r["game_id"]])
         conf, conf_why = confidence(r["edge"], stab if r["grade_line_kind"] == "pickem" else ctab)
+        if league == "NFL" and r["grade_line_kind"] == "pickem":
+            # the stale-line table is CFB-only (no NFL opening-line history yet)
+            conf = "Medium" if conf == "High" else conf
+            conf_why += " (college stale-line backtest; NFL not yet validated)"
         rows.append({
             "league": league, "game_id": r["game_id"], "kickoff_utc": r["kickoff_utc"].isoformat(),
             "away": r["away"], "home": r["home"], "neutral_site": bool(r["neutral_site"]),
