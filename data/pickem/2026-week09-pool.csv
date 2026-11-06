@@ -1,0 +1,73 @@
+league,away,home,home_spread
+NFL,JAX,BAL,10.0
+NFL,CIN,ATL,3.0
+NFL,DEN,CAR,2.5
+NFL,DAL,IND,5.5
+NFL,NYJ,KC,-10.0
+NFL,DET,MIA,7.0
+NFL,CLE,NO,-3.0
+NFL,NYG,PHI,3.5
+NFL,LA,WAS,4.5
+NFL,HOU,LAC,4.5
+NFL,LV,SF,-10.0
+NFL,GB,NE,-3.5
+NFL,ARI,SEA,-8.5
+NFL,TB,CHI,-6.0
+NFL,BUF,MIN,3.5
+CFB,UTSA,Florida Atlantic,6.5
+CFB,James Madison,Southern Miss,13.5
+CFB,Virginia Tech,SMU,-6.5
+CFB,South Florida,East Carolina,-2.5
+CFB,Nebraska,Illinois,4.5
+CFB,New Mexico,Nevada,10.0
+CFB,TCU,Arizona,-7.5
+CFB,Florida State,Boston College,6.5
+CFB,UCLA,Minnesota,5.5
+CFB,Texas,Missouri,2.5
+CFB,Clemson,Syracuse,2.5
+CFB,Iowa State,Baylor,-10.0
+CFB,BYU,Utah,-4.5
+CFB,North Carolina,UConn,7.0
+CFB,Tulsa,Tulane,2.5
+CFB,Duke,NC State,4.0
+CFB,Maryland,Purdue,-6.0
+CFB,Arkansas,Auburn,-10.0
+CFB,Oklahoma State,Kansas State,6.0
+CFB,Old Dominion,Coastal Carolina,-6.5
+CFB,Georgia State,App State,-6.0
+CFB,Texas A&M,South Carolina,-7.0
+CFB,UL Monroe,Arkansas State,-14.5
+CFB,Delaware,Kennesaw State,1.5
+CFB,Oregon,Ohio State,-7.5
+CFB,Cincinnati,Houston,-10.5
+CFB,Penn State,Washington,-2.5
+CFB,Alabama,LSU,-6.0
+CFB,Temple,Navy,-7.5
+CFB,Charlotte,UAB,-8.5
+CFB,Marshall,Georgia Southern,-10.5
+CFB,Western Kentucky,Middle Tennessee,1.5
+CFB,UCF,Kansas,-2.5
+CFB,Rice,North Texas,-17.5
+CFB,Northern Illinois,San José State,-10.0
+CFB,Missouri State,Florida International,-4.5
+CFB,Louisiana Tech,Troy,5.5
+CFB,Rutgers,Wisconsin,-17.5
+CFB,Vanderbilt,Mississippi State,-3.0
+CFB,South Alabama,Louisiana,-7.5
+CFB,Boise State,Colorado State,17.5
+CFB,Kentucky,Tennessee,-6.5
+CFB,Sam Houston,Jacksonville State,-17.5
+CFB,Michigan State,Michigan,-13.5
+CFB,Georgia,Ole Miss,3.5
+CFB,Louisville,Georgia Tech,14.5
+CFB,Iowa,Northwestern,-2.5
+CFB,Miami,Notre Dame,-7.5
+CFB,Colorado,Arizona State,-3.0
+CFB,Air Force,Army,-3.0
+CFB,Oklahoma,Florida,-6.5
+CFB,Liberty,New Mexico State,16.5
+CFB,West Virginia,Texas Tech,-16.5
+CFB,Fresno State,Utah State,2.5
+CFB,Hawai'i,UTEP,9.5
+CFB,Texas State,Oregon State,-6.5
+CFB,Wyoming,UNLV,-6.0
