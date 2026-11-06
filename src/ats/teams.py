@@ -20,7 +20,8 @@ import pandas as pd
 # nflverse's team list carries both LA and LAR for the Rams; schedules use LA.
 # Short names used by the pool sheet and other sources.
 NFL_OVERRIDES: dict[str, str] = {"Los Angeles Rams": "LA", "LA Rams": "LA", "LA Chargers": "LAC",
-                                 "NY Jets": "NYJ", "NY Giants": "NYG"}
+                                 "NY Jets": "NYJ", "NY Giants": "NYG",
+                                 "Washington Redskins": "WAS", "Washington Football Team": "WAS"}
 CFB_OVERRIDES: dict[str, str] = {"Louisiana-Lafayette": "Louisiana", "Louisiana-Monroe": "UL Monroe"}
 
 

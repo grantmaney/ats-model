@@ -119,6 +119,7 @@ def run_all(placebo: bool = True) -> str:
     runs = {}
     gn, on = data.games("NFL"), data.obs("NFL")
     runs["NFL close"] = W.run("NFL", gn, on)
+    runs["NFL stale"] = W.run("NFL", gn, on, line_col="close_home_spread", grade_col="open_home_spread")
     gc, oc = data.games("CFB"), data.obs("CFB")
     frame_c = W.build_frame("CFB", gc, oc)
     runs["CFB close"] = W.run("CFB", gc, oc, frame=frame_c)
@@ -132,9 +133,9 @@ def run_all(placebo: bool = True) -> str:
         bt = runs[f"{lg} close"]
         M.by_edge(M.picks(bt[bt["eval"]], "p_cal")).to_csv(REPORTS / f"edge_table_{lg.lower()}.csv", index=False)
     # Picks graded against a stale (pickem) line: confidence comes from this.
-    st = runs["CFB stale"]
-    M.by_edge(M.picks(st[st["eval"] & st["y"].notna()], "p_cal")).to_csv(REPORTS / "edge_table_stale.csv",
-                                                                          index=False)
+    for name, fn in (("CFB stale", "edge_table_stale.csv"), ("NFL stale", "edge_table_stale_nfl.csv")):
+        st = runs[name]
+        M.by_edge(M.picks(st[st["eval"] & st["y"].notna()], "p_cal")).to_csv(REPORTS / fn, index=False)
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     L = ["# Walk-forward backtest", "", f"Generated {now}. Regenerate with `python -m ats backtest`.", "",
@@ -146,16 +147,22 @@ def run_all(placebo: bool = True) -> str:
     cts = {}
     titles = {"NFL close": "NFL vs closing line", "CFB close": "CFB (FBS v FBS) vs closing line",
               "CFB open": "CFB (FBS v FBS) vs opening line",
-              "CFB stale": "CFB stale line: model sees the close, graded against the opener"}
-    for name, with_clv in (("NFL close", False), ("CFB close", False), ("CFB open", True), ("CFB stale", False)):
+              "CFB stale": "CFB stale line: model sees the close, graded against the opener",
+              "NFL stale": "NFL stale line: model sees the close, graded against the opener"}
+    for name, with_clv in (("NFL close", False), ("CFB close", False), ("CFB open", True), ("CFB stale", False),
+                           ("NFL stale", False)):
         sec, ct = _section(titles[name], runs[name], with_clv)
+        if name == "NFL stale":
+            sec[1:1] = ["", "Same design for NFL. Openers come from the aussportsbetting.com spreadsheet "
+                        "(data/raw/manual/nfl.xlsx, downloaded by hand; 2012+ here). Their opener is posted "
+                        "around Sunday night, earlier than the pool sheet, so this is optimistic too."]
         if name == "CFB stale":
             sec[1:1] = ["", "Stand-in for the pickem sheet: a fixed line set early in the week, while the model "
                         "sees a later market line. This is optimistic, because the close is the latest possible "
                         "line and the live line at Friday's deadline has moved less. Only seasons with openers "
                         "(2023+) are graded."]
         L += sec
-        if name != "CFB stale":
+        if not name.endswith("stale"):
             cts[name] = ct
 
     # Combined ranking at the close, per CLAUDE.md: calibrated edge across leagues.

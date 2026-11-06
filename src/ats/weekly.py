@@ -107,8 +107,8 @@ def predict_league(league: str, week_start: pd.Timestamp, now: datetime) -> tupl
 
 
 def _confidence_table(league: str) -> pd.DataFrame | None:
-    """league = 'NFL' / 'CFB' (graded vs the live line) or 'stale' (graded vs
-    a pickem line the market may have moved away from)."""
+    """league = 'NFL' / 'CFB' (graded vs the live line) or 'stale' /
+    'stale_nfl' (graded vs a pickem line the market may have moved away from)."""
     p = ROOT / "reports" / f"edge_table_{league.lower()}.csv"
     return pd.read_csv(p) if p.exists() else None
 
@@ -202,7 +202,8 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
     cur["pick_home"] = cur["p_home"].fillna(0.5) >= 0.5
     cur["p_pick"] = np.where(cur["pick_home"], cur["p_home"], 1 - cur["p_home"])
     cur["edge"] = cur["p_pick"] - 0.5
-    ctab, stab = _confidence_table(league), _confidence_table("stale")
+    # stale-line tables: edge_table_stale.csv (CFB), edge_table_stale_nfl.csv (NFL)
+    ctab, stab = _confidence_table(league), _confidence_table("stale" if league == "CFB" else "stale_nfl")
     qbf = qb_injury_flags(cur) if league == "NFL" else {}
     rows = []
     for _, r in cur.iterrows():
@@ -220,10 +221,6 @@ def build_table(league: str, cur: pd.DataFrame, past: pd.DataFrame, pick_lines: 
         if r["game_id"] in qbf:
             flags.append(qbf[r["game_id"]])
         conf, conf_why = confidence(r["edge"], stab if r["grade_line_kind"] == "pickem" else ctab)
-        if league == "NFL" and r["grade_line_kind"] == "pickem":
-            # the stale-line table is CFB-only (no NFL opening-line history yet)
-            conf = "Medium" if conf == "High" else conf
-            conf_why += " (college stale-line backtest; NFL not yet validated)"
         rows.append({
             "league": league, "game_id": r["game_id"], "kickoff_utc": r["kickoff_utc"].isoformat(),
             "away": r["away"], "home": r["home"], "neutral_site": bool(r["neutral_site"]),

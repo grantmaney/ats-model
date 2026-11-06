@@ -9,11 +9,14 @@ timestamp, so line_fetched_at is NaT for them.
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 
 import nflreadpy as nfl
+import numpy as np
 import pandas as pd
 
 from ..cache import cached, read_manifest
+from ..config import RAW
 from ..schema import validate_games
 from ..weeks import current_season, football_week_start_series
 
@@ -67,6 +70,49 @@ def load_teams(force: bool = False) -> pd.DataFrame:
     )
 
 
+MANUAL_LINES = RAW / "manual" / "nfl.xlsx"
+
+
+@lru_cache(maxsize=1)
+def manual_open_lines() -> pd.DataFrame:
+    """Opening spreads from the aussportsbetting.com NFL spreadsheet, which
+    the user downloads by hand into data/raw/manual/nfl.xlsx (the site blocks
+    scripts). Its 'Home Line Open' is home-perspective, negative = home
+    favored, like ours. Returns date (US calendar date), home, away,
+    open_home_spread; empty if the file isn't there."""
+    cols = ["date", "home", "away", "open_home_spread"]
+    if not MANUAL_LINES.exists():
+        return pd.DataFrame(columns=cols)
+    from ..teams import to_canonical
+    x = pd.read_excel(MANUAL_LINES, sheet_name="Data", header=0)
+    x = x.dropna(subset=["Home Line Open"])
+    home, _ = to_canonical("NFL", x["Home Team"], fuzzy=True)
+    away, _ = to_canonical("NFL", x["Away Team"], fuzzy=True)
+    return pd.DataFrame({"date": pd.to_datetime(x["Date"], errors="coerce").dt.normalize().values,
+                         "home": home.values, "away": away.values,
+                         "open_home_spread": x["Home Line Open"].astype(float).values}).dropna()
+
+
+def _attach_open(out: pd.DataFrame) -> pd.DataFrame:
+    """Fill open_home_spread from the manual sheet, matching on the unordered
+    team pair and the game date (+-1 day for time-zone differences); the sign
+    is flipped when the sheet lists the teams the other way round."""
+    m = manual_open_lines()
+    if m.empty:
+        return out
+    date = out["kickoff_utc"].dt.tz_convert("America/New_York").dt.tz_localize(None).dt.normalize()
+    look = {}
+    for r in m.itertuples():
+        for dd in (-1, 0, 1):
+            look[(r.date + pd.Timedelta(days=dd), frozenset((r.home, r.away)))] = (r.home, r.open_home_spread)
+    vals = []
+    for d, h, a in zip(date, out["home"], out["away"]):
+        hit = look.get((d, frozenset((h, a))))
+        vals.append(np.nan if hit is None else (hit[1] if hit[0] == h else -hit[1]))
+    out["open_home_spread"] = pd.Series(vals, index=out.index, dtype="Float64")
+    return out
+
+
 def games(season: int, force: bool = False) -> pd.DataFrame:
     """Canonical games table for one NFL season."""
     s = load_schedules(season, force=force)
@@ -109,4 +155,4 @@ def games(season: int, force: bool = False) -> pd.DataFrame:
             out.loc[pending, "line_fetched_at"] = pd.Timestamp(fetched)
     out.loc[out["close_home_spread"].isna(), "line_source"] = pd.NA
     out["football_week_start"] = football_week_start_series(out["kickoff_utc"])
-    return validate_games(out)
+    return validate_games(_attach_open(out))
