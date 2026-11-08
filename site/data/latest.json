@@ -25,33 +25,33 @@
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
  "notes": [
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-07 20:29 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-08 18:46 UTC."
  ],
  "season_record": {
   "weeks": 4,
   "top6_graded": {
-   "n": 18.0,
-   "wins": 10.0,
-   "hit_rate": 0.5555555555555556,
-   "ci_lo": 0.3371606942825164,
-   "ci_hi": 0.7544076889861088,
-   "p_vs_50": 0.8145294189453125
+   "n": 19.0,
+   "wins": 11.0,
+   "hit_rate": 0.5789473684210527,
+   "ci_lo": 0.36275551465160105,
+   "ci_hi": 0.7685837960796962,
+   "p_vs_50": 0.6476058959960938
   },
   "top10_graded": {
-   "n": 30.0,
-   "wins": 16.0,
-   "hit_rate": 0.5333333333333333,
-   "ci_lo": 0.3614201328152505,
-   "ci_hi": 0.6976787277587178,
-   "p_vs_50": 0.8555355519056321
+   "n": 34.0,
+   "wins": 19.0,
+   "hit_rate": 0.5588235294117647,
+   "ci_lo": 0.3945361778918369,
+   "ci_hi": 0.7111675978470325,
+   "p_vs_50": 0.6075913612730801
   },
   "all_graded": {
-   "n": 199.0,
-   "wins": 97.0,
-   "hit_rate": 0.48743718592964824,
-   "ci_lo": 0.41888705666094184,
-   "ci_hi": 0.5564631673562224,
-   "p_vs_50": 0.7768377068940344
+   "n": 250.0,
+   "wins": 117.0,
+   "hit_rate": 0.468,
+   "ci_lo": 0.40709862287317655,
+   "ci_hi": 0.5298699433507994,
+   "p_vs_50": 0.34279866684013405
   }
  },
  "games": [
@@ -82,7 +82,9 @@
    "confidence_basis": "backtest 61.6% (n=906) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -14.0
   },
   {
    "rank": 2,
@@ -287,7 +289,9 @@
    "confidence_basis": "backtest 54.5% (n=402) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 11.0
   },
   {
    "rank": 9,
@@ -316,7 +320,9 @@
    "confidence_basis": "backtest 54.5% (n=402) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -14.0
   },
   {
    "rank": 10,
@@ -345,7 +351,9 @@
    "confidence_basis": "backtest 54.5% (n=402) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -6.0
   },
   {
    "rank": 11,
@@ -403,7 +411,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -3.0
   },
   {
    "rank": 13,
@@ -432,7 +442,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 21.0
   },
   {
    "rank": 14,
@@ -461,7 +473,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -9.0
   },
   {
    "rank": 15,
@@ -490,7 +504,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 7.0
   },
   {
    "rank": 16,
@@ -519,7 +535,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 9.0
   },
   {
    "rank": 17,
@@ -548,7 +566,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -3.0
   },
   {
    "rank": 18,
@@ -577,7 +597,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 28.0
   },
   {
    "rank": 19,
@@ -606,7 +628,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 33.0
   },
   {
    "rank": 20,
@@ -664,7 +688,9 @@
    "confidence_basis": "backtest 49.7% (n=298) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 29.0
   },
   {
    "rank": 22,
@@ -693,7 +719,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 10.0
   },
   {
    "rank": 23,
@@ -722,7 +750,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -1.0
   },
   {
    "rank": 24,
@@ -751,7 +781,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 3.0
   },
   {
    "rank": 25,
@@ -811,7 +843,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -17.0
   },
   {
    "rank": 27,
@@ -840,7 +874,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 7.0
   },
   {
    "rank": 28,
@@ -869,7 +905,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -16.0
   },
   {
    "rank": 29,
@@ -898,7 +936,9 @@
    "confidence_basis": "backtest 50.1% (n=409) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -16.0
   },
   {
    "rank": 30,
@@ -958,7 +998,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -5.0
   },
   {
    "rank": 32,
@@ -1018,7 +1060,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 11.0
   },
   {
    "rank": 34,
@@ -1047,7 +1091,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 7.0
   },
   {
    "rank": 35,
@@ -1076,7 +1122,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 11.0
   },
   {
    "rank": 36,
@@ -1105,7 +1153,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -38.0
   },
   {
    "rank": 37,
@@ -1134,7 +1184,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 8.0
   },
   {
    "rank": 38,
@@ -1163,7 +1215,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 5.0
   },
   {
    "rank": 39,
@@ -1192,7 +1246,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -2.0
   },
   {
    "rank": 40,
@@ -1221,7 +1277,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -13.0
   },
   {
    "rank": 41,
@@ -1250,7 +1308,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -2.0
   },
   {
    "rank": 42,
@@ -1279,7 +1339,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 2.0
   },
   {
    "rank": 43,
@@ -1308,7 +1370,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -38.0
   },
   {
    "rank": 44,
@@ -1337,7 +1401,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 7.0
   },
   {
    "rank": 45,
@@ -1397,7 +1463,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -50.0
   },
   {
    "rank": 47,
@@ -1457,7 +1525,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 2.0
   },
   {
    "rank": 49,
@@ -1486,7 +1556,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -26.0
   },
   {
    "rank": 50,
@@ -1515,7 +1587,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -35.0
   },
   {
    "rank": 51,
@@ -1544,7 +1618,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 3.0
   },
   {
    "rank": 52,
@@ -1573,7 +1649,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 36.0
   },
   {
    "rank": 53,
@@ -1602,7 +1680,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 8.0
   },
   {
    "rank": 54,
@@ -1631,7 +1711,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -5.0
   },
   {
    "rank": 55,
@@ -1722,7 +1804,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -16.0
   },
   {
    "rank": 58,
@@ -1782,7 +1866,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -13.0
   },
   {
    "rank": 60,
@@ -1842,7 +1928,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -21.0
   },
   {
    "rank": 62,
@@ -1871,7 +1959,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -3.0
   },
   {
    "rank": 63,
@@ -1900,7 +1990,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -7.0
   },
   {
    "rank": 64,
@@ -1929,7 +2021,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -24.0
   },
   {
    "rank": 65,
@@ -1958,7 +2052,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -14.0
   },
   {
    "rank": 66,
@@ -2018,7 +2114,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -27.0
   },
   {
    "rank": 68,
@@ -2078,7 +2176,9 @@
    "confidence_basis": "backtest 51.9% (n=649) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -18.0
   },
   {
    "rank": 70,
@@ -2107,7 +2207,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -17.0
   },
   {
    "rank": 71,
@@ -2344,5 +2446,5 @@
    "unranked": false
   }
  ],
- "results_updated_at": "2026-11-07T20:29:00.557601+00:00"
+ "results_updated_at": "2026-11-08T18:46:10.340995+00:00"
 }
