@@ -25,33 +25,33 @@
   "stats": "nflverse (nflreadpy), CollegeFootballData.com"
  },
  "notes": [
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-08 20:45 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-09 23:22 UTC."
  ],
  "season_record": {
   "weeks": 4,
   "top6_graded": {
-   "n": 19.0,
-   "wins": 11.0,
-   "hit_rate": 0.5789473684210527,
-   "ci_lo": 0.36275551465160105,
-   "ci_hi": 0.7685837960796962,
-   "p_vs_50": 0.6476058959960938
+   "n": 23.0,
+   "wins": 13.0,
+   "hit_rate": 0.5652173913043478,
+   "ci_lo": 0.3681104930501695,
+   "ci_hi": 0.7436563166780135,
+   "p_vs_50": 0.6776394844055176
   },
   "top10_graded": {
-   "n": 34.0,
-   "wins": 19.0,
-   "hit_rate": 0.5588235294117647,
-   "ci_lo": 0.3945361778918369,
-   "ci_hi": 0.7111675978470325,
-   "p_vs_50": 0.6075913612730801
+   "n": 38.0,
+   "wins": 21.0,
+   "hit_rate": 0.5526315789473685,
+   "ci_lo": 0.3970602917908942,
+   "ci_hi": 0.6985383468844911,
+   "p_vs_50": 0.6271025701571489
   },
   "all_graded": {
-   "n": 250.0,
-   "wins": 117.0,
-   "hit_rate": 0.468,
-   "ci_lo": 0.40709862287317655,
-   "ci_hi": 0.5298699433507994,
-   "p_vs_50": 0.34279866684013405
+   "n": 262.0,
+   "wins": 122.0,
+   "hit_rate": 0.46564885496183206,
+   "ci_lo": 0.4061796617738192,
+   "ci_hi": 0.5261108450543069,
+   "p_vs_50": 0.2935818879050747
   }
  },
  "games": [
@@ -144,7 +144,9 @@
    "confidence_basis": "backtest 60.6% (n=1149) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -22.0
   },
   {
    "rank": 4,
@@ -173,7 +175,9 @@
    "confidence_basis": "backtest 60.6% (n=1149) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 1.0
   },
   {
    "rank": 5,
@@ -202,7 +206,9 @@
    "confidence_basis": "backtest 54.5% (n=673) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -18.0
   },
   {
    "rank": 6,
@@ -231,7 +237,9 @@
    "confidence_basis": "backtest 54.5% (n=673) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -8.0
   },
   {
    "rank": 7,
@@ -382,7 +390,9 @@
    "confidence_basis": "backtest 54.5% (n=673) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -10.0
   },
   {
    "rank": 12,
@@ -659,7 +669,9 @@
    "confidence_basis": "backtest 47.9% (n=338) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 23.0
   },
   {
    "rank": 21,
@@ -2238,7 +2250,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 3.0
   },
   {
    "rank": 72,
@@ -2267,7 +2281,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 14.0
   },
   {
    "rank": 73,
@@ -2296,7 +2312,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 21.0
   },
   {
    "rank": 74,
@@ -2325,7 +2343,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -5.0
   },
   {
    "rank": 75,
@@ -2354,7 +2374,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": -4.0
   },
   {
    "rank": 76,
@@ -2383,7 +2405,9 @@
    "confidence_basis": "backtest 51.7% (n=615) at this edge",
    "flags": "",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -7.0
   },
   {
    "rank": 77,
@@ -2446,5 +2470,5 @@
    "unranked": false
   }
  ],
- "results_updated_at": "2026-11-08T20:45:13.363255+00:00"
+ "results_updated_at": "2026-11-09T23:22:56.553693+00:00"
 }
