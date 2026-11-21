@@ -26,7 +26,7 @@
  },
  "notes": [
   "No pool sheet for this week yet (it arrives Thursday); picks use the live DraftKings line. Against the live line every game is close to a coin flip (NFL model weight is 0, so NFL games show no edge at all); the ordering only becomes meaningful once pool lines differ from the market.",
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-21 11:50 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-21 20:27 UTC."
  ],
  "season_record": {
   "weeks": 6,
@@ -47,12 +47,12 @@
    "p_vs_50": 0.8898839652765371
   },
   "all_graded": {
-   "n": 347.0,
-   "wins": 163.0,
-   "hit_rate": 0.4697406340057637,
-   "ci_lo": 0.4178464758333535,
-   "ci_hi": 0.5222974523667233,
-   "p_vs_50": 0.2829595244188189
+   "n": 352.0,
+   "wins": 164.0,
+   "hit_rate": 0.4659090909090909,
+   "ci_lo": 0.41444526383023467,
+   "ci_hi": 0.5181089962675166,
+   "p_vs_50": 0.22018014007232747
   }
  },
  "games": [
@@ -555,7 +555,9 @@
    "confidence_basis": "backtest 50.4% (n=6970) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 4.0
   },
   {
    "rank": 18,
@@ -671,7 +673,9 @@
    "confidence_basis": "backtest 50.4% (n=6970) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 3.0
   },
   {
    "rank": 22,
@@ -936,7 +940,9 @@
    "confidence_basis": "backtest 50.4% (n=6970) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 7.0
   },
   {
    "rank": 31,
@@ -1317,7 +1323,9 @@
    "confidence_basis": "backtest 50.4% (n=6970) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -4.0
   },
   {
    "rank": 44,
@@ -1464,7 +1472,9 @@
    "confidence_basis": "backtest 50.4% (n=6970) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -32.0
   },
   {
    "rank": 49,
@@ -2490,5 +2500,5 @@
    "unranked": false
   }
  ],
- "results_updated_at": "2026-11-21T11:50:26.183071+00:00"
+ "results_updated_at": "2026-11-21T20:27:15.240932+00:00"
 }
