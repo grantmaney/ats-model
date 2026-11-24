@@ -26,7 +26,7 @@
  },
  "notes": [
   "No pool sheet for this week yet (it arrives Thursday); picks use the live DraftKings line. Against the live line every game is close to a coin flip (NFL model weight is 0, so NFL games show no edge at all); the ordering only becomes meaningful once pool lines differ from the market.",
-  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-22 21:59 UTC."
+  "Picks locked at the Friday 10pm PT deadline; results updated 2026-11-24 01:36 UTC."
  ],
  "season_record": {
   "weeks": 6,
@@ -47,12 +47,12 @@
    "p_vs_50": 1.0
   },
   "all_graded": {
-   "n": 401.0,
-   "wins": 189.0,
-   "hit_rate": 0.4713216957605985,
-   "ci_lo": 0.42296713184498835,
-   "ci_hi": 0.5202205247594712,
-   "p_vs_50": 0.27191022051905445
+   "n": 412.0,
+   "wins": 197.0,
+   "hit_rate": 0.47815533980582525,
+   "ci_lo": 0.43034500320588914,
+   "ci_hi": 0.5263692841573762,
+   "p_vs_50": 0.4023235273502851
   }
  },
  "games": [
@@ -2129,7 +2129,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 25.0
   },
   {
    "rank": 68,
@@ -2158,7 +2160,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 27.0
   },
   {
    "rank": 69,
@@ -2187,7 +2191,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 10.0
   },
   {
    "rank": 70,
@@ -2245,7 +2251,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 5.0
   },
   {
    "rank": 72,
@@ -2274,7 +2282,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 3.0
   },
   {
    "rank": 73,
@@ -2303,7 +2313,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 21.0
   },
   {
    "rank": 74,
@@ -2332,7 +2344,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 8.0
   },
   {
    "rank": 75,
@@ -2361,7 +2375,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 14.0
   },
   {
    "rank": 76,
@@ -2390,7 +2406,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": 2.0
   },
   {
    "rank": 77,
@@ -2419,7 +2437,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "miss",
+   "final_margin_home": -3.0
   },
   {
    "rank": 78,
@@ -2448,7 +2468,9 @@
    "confidence_basis": "backtest 48.9% (n=3069) at this edge",
    "flags": "no pickem match",
    "locked": false,
-   "unranked": false
+   "unranked": false,
+   "result": "hit",
+   "final_margin_home": 17.0
   },
   {
    "rank": 79,
@@ -2598,5 +2620,5 @@
    "unranked": false
   }
  ],
- "results_updated_at": "2026-11-22T21:59:43.362855+00:00"
+ "results_updated_at": "2026-11-24T01:36:35.661295+00:00"
 }
